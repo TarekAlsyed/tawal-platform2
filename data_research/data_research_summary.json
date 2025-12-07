@@ -1,0 +1,57 @@
+{
+  "title": "ملخص مناهج البحث",
+  "files": [
+    {
+      "name": "الفصل الأول",
+      "path": "pdf/research/1.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الثاني",
+      "path": "pdf/research/2.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الثالث",
+      "path": "pdf/research/3.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الرابع",
+      "path": "pdf/research/4.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الخامس",
+      "path": "pdf/research/5.pdf",
+      "type": "pdf"
+    }
+  ],
+  "images": [
+    {"path": "images/research/1.jpg", "caption": "صورة 1"},
+    {"path": "images/research/2.jpg", "caption": "صورة 2"},
+    {"path": "images/research/3.jpg", "caption": "صورة 3"},
+    {"path": "images/research/4.jpg", "caption": "صورة 4"},
+    {"path": "images/research/5.jpg", "caption": "صورة 5"},
+    {"path": "images/research/6.jpg", "caption": "صورة 6"},
+    {"path": "images/research/7.jpg", "caption": "صورة 7"},
+    {"path": "images/research/8.jpg", "caption": "صورة 8"},
+    {"path": "images/research/9.jpg", "caption": "صورة 9"},
+    {"path": "images/research/10.jpg", "caption": "صورة 10"},
+    {"path": "images/research/11.jpg", "caption": "صورة 11"},
+    {"path": "images/research/12.jpg", "caption": "صورة 12"},
+    {"path": "images/research/13.jpg", "caption": "صورة 13"},
+    {"path": "images/research/14.jpg", "caption": "صورة 14"},
+    {"path": "images/research/15.jpg", "caption": "صورة 15"},
+    {"path": "images/research/16.jpg", "caption": "صورة 16"},
+    {"path": "images/research/17.jpg", "caption": "صورة 17"},
+    {"path": "images/research/18.jpg", "caption": "صورة 18"},
+    {"path": "images/research/19.jpg", "caption": "صورة 19"},
+    {"path": "images/research/20.jpg", "caption": "صورة 20"},
+    {"path": "images/research/21.jpg", "caption": "صورة 21"},
+    {"path": "images/research/22.jpg", "caption": "صورة 22"},
+    {"path": "images/research/23.jpg", "caption": "صورة 23"},
+    {"path": "images/research/24.jpg", "caption": "صورة 24"},
+    {"path": "images/research/25.jpg", "caption": "صورة 25"}
+  ]
+}

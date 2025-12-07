@@ -1,0 +1,57 @@
+{
+  "title": "ملخص الأراضي الجافة",
+  "files": [
+    {
+      "name": "الفصل الأول",
+      "path": "pdf/arid_lands/1.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الثاني",
+      "path": "pdf/arid_lands/2.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الثالث",
+      "path": "pdf/arid_lands/3.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الرابع",
+      "path": "pdf/arid_lands/4.pdf",
+      "type": "pdf"
+    },
+    {
+      "name": "الفصل الخامس",
+      "path": "pdf/arid_lands/5.pdf",
+      "type": "pdf"
+    }
+  ],
+  "images": [
+    {"path": "images/arid_lands/1.jpg", "caption": "صورة 1"},
+    {"path": "images/arid_lands/2.jpg", "caption": "صورة 2"},
+    {"path": "images/arid_lands/3.jpg", "caption": "صورة 3"},
+    {"path": "images/arid_lands/4.jpg", "caption": "صورة 4"},
+    {"path": "images/arid_lands/5.jpg", "caption": "صورة 5"},
+    {"path": "images/arid_lands/6.jpg", "caption": "صورة 6"},
+    {"path": "images/arid_lands/7.jpg", "caption": "صورة 7"},
+    {"path": "images/arid_lands/8.jpg", "caption": "صورة 8"},
+    {"path": "images/arid_lands/9.jpg", "caption": "صورة 9"},
+    {"path": "images/arid_lands/10.jpg", "caption": "صورة 10"},
+    {"path": "images/arid_lands/11.jpg", "caption": "صورة 11"},
+    {"path": "images/arid_lands/12.jpg", "caption": "صورة 12"},
+    {"path": "images/arid_lands/13.jpg", "caption": "صورة 13"},
+    {"path": "images/arid_lands/14.jpg", "caption": "صورة 14"},
+    {"path": "images/arid_lands/15.jpg", "caption": "صورة 15"},
+    {"path": "images/arid_lands/16.jpg", "caption": "صورة 16"},
+    {"path": "images/arid_lands/17.jpg", "caption": "صورة 17"},
+    {"path": "images/arid_lands/18.jpg", "caption": "صورة 18"},
+    {"path": "images/arid_lands/19.jpg", "caption": "صورة 19"},
+    {"path": "images/arid_lands/20.jpg", "caption": "صورة 20"},
+    {"path": "images/arid_lands/21.jpg", "caption": "صورة 21"},
+    {"path": "images/arid_lands/22.jpg", "caption": "صورة 22"},
+    {"path": "images/arid_lands/23.jpg", "caption": "صورة 23"},
+    {"path": "images/arid_lands/24.jpg", "caption": "صورة 24"},
+    {"path": "images/arid_lands/25.jpg", "caption": "صورة 25"}
+  ]
+}

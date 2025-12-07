@@ -1,0 +1,30 @@
+{
+  "gis_networks": {
+    "locked": false,
+    "message": "عذراً، هذا الاختبار مغلق حالياً للمراجعة."
+  },
+  "transport": {
+    "locked": false,
+    "message": "لم يحن موعد هذا الاختبار بعد."
+  },
+  "geo_maps": {
+    "locked": false,
+    "message": "مغلق مؤقتاً من قبل الإدارة."
+  },
+  "projections": {
+    "locked": false,
+    "message": "سيتم فتح الاختبار قريباً."
+  },
+  "research": {
+    "locked": false,
+    "message": "الامتحان غير متاح حالياً."
+  },
+  "surveying_texts": {
+    "locked": false,
+    "message": "مغلق للصيانة."
+  },
+  "arid_lands": {
+    "locked": false,
+    "message": "عفواً، التسجيل في هذا الاختبار مغلق."
+  }
+}
