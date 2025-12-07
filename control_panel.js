@@ -4,7 +4,7 @@
  * =================================================================================
  */
 
-const API_URL = 'https://tawal-backend-production.up.railway.app/api';
+const API_URL = 'https://tawal-backend2-production.up.railway.app/api';
 let adminToken = localStorage.getItem('admin_token');
 
 // متغير عالمي لتخزين بيانات الطلاب لغرض التصدير (تمت إضافته للميزة الجديدة)
