@@ -5,7 +5,7 @@
  */
 
 // 1. الثوابت والإعدادات
-const API_URL = 'https://tawal-backend-production.up.railway.app/api';
+const API_URL = 'https://tawal-backend2-production.up.railway.app/api';
 const STORAGE_KEY_STUDENT_ID = 'tawal_student_id_v2';
 const STORAGE_KEY_USER = 'tawal_user_data_v2';
 const STORAGE_KEY_FP = 'tawal_device_fp_fixed';
