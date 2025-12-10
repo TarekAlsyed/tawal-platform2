@@ -1,27 +1,505 @@
 {
-  "title": "نصوص جغرافية - نموذج تجريبي",
+  "title": "Geography Research Methods - English",
   "questions": [
     {
       "type": "tf",
-      "question": "Surveying is the science of determining the relative positions of points on the Earth's surface.",
+      "question": "The literal meaning of the word \"Geography\" is the description of the Earth.",
       "answer": true,
+      "difficulty": "easy",
+      "topic": "Definitions of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "Which ancient civilization was interested in geography to understand environmental conditions like the Nile floods?",
+      "options": [
+        "The Ancient Egyptians",
+        "The Incas",
+        "The Mayans",
+        "The Chinese only"
+      ],
+      "answer": 0,
+      "difficulty": "easy",
+      "topic": "History of Geography"
+    },
+    {
+      "type": "tf",
+      "question": "Modern geography focuses solely on describing the Earth without analyzing relationships.",
+      "answer": false,
+      "difficulty": "medium",
+      "topic": "Nature of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "The science concerned with measuring the shape and size of the Earth is called:",
+      "options": [
+        "Geology",
+        "Geodesy",
+        "Demography",
+        "Meteorology"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "topic": "Auxiliary Sciences"
+    },
+    {
+      "type": "tf",
+      "question": "Geography is a completely isolated science and has no relation to history or economics.",
+      "answer": false,
+      "difficulty": "easy",
+      "topic": "Relation to other sciences"
+    },
+    {
+      "type": "mc",
+      "question": "The development of geographical research methods included the use of:",
+      "options": [
+        "Astrology",
+        "Quantitative analysis and computers",
+        "Magic",
+        "Mythology"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "topic": "Evolution of Methods"
+    },
+    {
+      "type": "tf",
+      "question": "The Age of Discovery and colonialism increased the interest in geography.",
+      "answer": true,
+      "difficulty": "easy",
+      "topic": "Evolution of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "The term \"Site\" in geography refers to:",
+      "options": [
+        "Local characteristics of a place (like relief)",
+        "Relation to other places",
+        "Astronomical location only",
+        "Administrative division"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "topic": "Geographical Concepts"
+    },
+    {
+      "type": "tf",
+      "question": "Traditionally, geographers have focused more on studying \"Land\" than \"Oceans\".",
+      "answer": true,
+      "difficulty": "medium",
+      "topic": "Subjects of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "Which of the following is a branch of Applied Geography that serves society?",
+      "options": [
+        "Historical Geography",
+        "Regional Planning and Pollution studies",
+        "Astronomical Geography",
+        "Petrology"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "topic": "Applied Geography"
+    },
+    {
+      "type": "tf",
+      "question": "The \"Quantitative Revolution\" in geography relies on literary descriptive methods.",
+      "answer": false,
+      "difficulty": "medium",
+      "topic": "Modern Methods"
+    },
+    {
+      "type": "mc",
+      "question": "The scholar \"Hartshorne\" defined geography as the science of:",
+      "options": [
+        "Description of Earth",
+        "Areal Differentiation",
+        "Planetary studies",
+        "Natural History"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Definitions of Geography"
+    },
+    {
+      "type": "tf",
+      "question": "\"Vidal de la Blache\" is the leader of the \"Environmental Determinism\" school.",
+      "answer": false,
+      "difficulty": "hard",
+      "topic": "Geographical Thought"
+    },
+    {
+      "type": "mc",
+      "question": "The science of interpreting aerial photos to extract information is called:",
+      "options": [
+        "Air-photo interpretation",
+        "Cartography",
+        "Geology",
+        "Astronomy"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "topic": "Research Methods"
+    },
+    {
+      "type": "tf",
+      "question": "The relationship between \"Man\" and \"Environment\" is reciprocal and interactive.",
+      "answer": true,
+      "difficulty": "easy",
+      "topic": "Philosophy of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "\"Field Work\" is considered:",
+      "options": [
+        "An outdated method",
+        "A primary source of geographical data",
+        "A waste of time",
+        "Specific to Geology only"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "topic": "Research Methods"
+    },
+    {
+      "type": "tf",
+      "question": "\"Humanistic Geography\" emerged as a reaction to the excessive focus on quantitative methods.",
+      "answer": true,
+      "difficulty": "hard",
+      "topic": "Modern Trends"
+    },
+    {
+      "type": "mc",
+      "question": "Which of the following scholars is associated with the \"Cycle of Erosion\" theory?",
+      "options": [
+        "Ratzel",
+        "W.M. Davis",
+        "Vidal de la Blache",
+        "Hartshorne"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Physical Geography"
+    },
+    {
+      "type": "tf",
+      "question": "\"Systematic Geography\" studies all phenomena in a specific region.",
+      "answer": false,
+      "difficulty": "medium",
+      "topic": "Branches of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "\"Factor Analysis\" is a technique used in:",
+      "options": [
+        "Descriptive Geography",
+        "Quantitative Geography (Statistics)",
+        "Historical Geography",
+        "Manual Cartography"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Quantitative Methods"
+    },
+    {
+      "type": "tf",
+      "question": "\"Ratzel\" contributed significantly to the foundation of Human and Political Geography.",
+      "answer": true,
+      "difficulty": "medium",
+      "topic": "Famous Geographers"
+    },
+    {
+      "type": "mc",
+      "question": "\"Remote Sensing\" relies on:",
+      "options": [
+        "Personal interviews",
+        "Satellite and Aerial images",
+        "Historical documents",
+        "Fossils"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "topic": "Modern Techniques"
+    },
+    {
+      "type": "tf",
+      "question": "The concept of \"Lebensraum\" (Living Space) is associated with the German school of Geopolitics.",
+      "answer": true,
+      "difficulty": "hard",
+      "topic": "Political Geographic Thought"
+    },
+    {
+      "type": "mc",
+      "question": "\"Medical Geography\" is concerned with studying:",
+      "options": [
+        "Hospital distribution only",
+        "The relationship between environment and diseases",
+        "Drug prices",
+        "History of medicine"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "topic": "Branches of Geography"
+    },
+    {
+      "type": "tf",
+      "question": "Computers can be used to store and analyze geographical data and draw maps.",
+      "answer": true,
+      "difficulty": "easy",
+      "topic": "Modern Techniques"
+    },
+    {
+      "type": "mc",
+      "question": "The \"Scientific Approach\" in geography aims to:",
+      "options": [
+        "Tell stories",
+        "Reach laws, generalizations, and explain phenomena",
+        "Collect data only",
+        "Paint artistic pictures"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Research Methodology"
+    },
+    {
+      "type": "tf",
+      "question": "\"Dualism\" in geography refers to the separation between Physical and Human geography.",
+      "answer": true,
+      "difficulty": "medium",
+      "topic": "Structure of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "\"Areal Differentiation\" means:",
+      "options": [
+        "Similarity of all regions",
+        "Variation of phenomena from one place to another",
+        "Studying planets",
+        "Drawing maps"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Geographical Concepts"
+    },
+    {
+      "type": "tf",
+      "question": "\"Possibilism\" states that the environment sets limits, but man has choices.",
+      "answer": true,
+      "difficulty": "medium",
+      "topic": "Geographical Thought"
+    },
+    {
+      "type": "mc",
+      "question": "Which era is characterized by the dominance of \"Descriptive Geography\"?",
+      "options": [
+        "The Modern Quantitative Era",
+        "The Ancient and Middle Ages",
+        "The Future",
+        "The Computer Age"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "topic": "History of Geography"
+    },
+    {
+      "type": "tf",
+      "question": "Geography is solely a natural science like Physics.",
+      "answer": false,
+      "difficulty": "easy",
+      "topic": "Nature of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "\"Photogrammetry\" is the science of:",
+      "options": [
+        "Obtaining reliable measurements from photographs",
+        "Drawing sketches",
+        "Writing history",
+        "Analyzing soil"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "topic": "Techniques"
+    },
+    {
+      "type": "tf",
+      "question": "\"Normative Models\" describe what ought to be (optimal conditions) rather than what actually exists.",
+      "answer": true,
+      "difficulty": "hard",
+      "topic": "Methodology"
+    },
+    {
+      "type": "mc",
+      "question": "The \"Regional Method\" focuses on:",
+      "options": [
+        "Studying a specific area comprehensively",
+        "Studying one topic globally",
+        "Studying stars",
+        "Studying history"
+      ],
+      "answer": 0,
+      "difficulty": "medium",
+      "topic": "Research Methods"
+    },
+    {
+      "type": "tf",
+      "question": "The Industrial Revolution had no impact on the development of geography.",
+      "answer": false,
+      "difficulty": "easy",
+      "topic": "History of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "Who wrote \"Cosmos\" and is considered a founder of modern physical geography?",
+      "options": [
+        "Humboldt",
+        "Ritter",
+        "Ratzel",
+        "Hartshorne"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "topic": "Famous Geographers"
+    },
+    {
+      "type": "tf",
+      "question": "\"Micro-geography\" refers to the detailed study of very small areas.",
+      "answer": true,
+      "difficulty": "medium",
+      "topic": "Research Scope"
+    },
+    {
+      "type": "mc",
+      "question": "The \"System Approach\" views geographical phenomena as:",
+      "options": [
+        "Isolated parts",
+        "Interconnected and interacting elements",
+        "Static objects",
+        "Unrelated events"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Modern Methods"
+    },
+    {
+      "type": "tf",
+      "question": "Geography acts as a bridge between the natural sciences and social sciences.",
+      "answer": true,
+      "difficulty": "easy",
+      "topic": "Position of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "\"Environmental Determinism\" suggests that:",
+      "options": [
+        "Man controls nature",
+        "The physical environment controls human activities",
+        "Man and nature are equal",
+        "Technology solves everything"
+      ],
+      "answer": 1,
+      "difficulty": "medium",
+      "topic": "Geographical Thought"
+    },
+    {
+      "type": "tf",
+      "question": "\"Spectral Analysis\" is a method used in processing remote sensing data.",
+      "answer": true,
+      "difficulty": "hard",
+      "topic": "Techniques"
+    },
+    {
+      "type": "mc",
+      "question": "Which of the following is NOT a primary source of data in geography?",
+      "options": [
+        "Field work",
+        "Aerial photos",
+        "Textbooks (Secondary source)",
+        "Census data"
+      ],
+      "answer": 2,
+      "difficulty": "medium",
+      "topic": "Data Sources"
+    },
+    {
+      "type": "tf",
+      "question": "\"Behavioral Geography\" emphasizes the role of human perception and cognition.",
+      "answer": true,
+      "difficulty": "hard",
+      "topic": "Modern Trends"
+    },
+    {
+      "type": "mc",
+      "question": "The study of landforms is known as:",
+      "options": [
+        "Climatology",
+        "Geomorphology",
+        "Biogeography",
+        "Demography"
+      ],
+      "answer": 1,
+      "difficulty": "easy",
+      "topic": "Branches of Geography"
+    },
+    {
+      "type": "tf",
+      "question": "Carl Ritter emphasized the study of the Earth as the \"home of man\".",
+      "answer": true,
+      "difficulty": "medium",
+      "topic": "Famous Geographers"
+    },
+    {
+      "type": "mc",
+      "question": "\"Geography\" comes from the Greek words \"Geo\" and \"Graphy\", meaning:",
+      "options": [
+        "Earth Description",
+        "Star Study",
+        "Rock Analysis",
+        "Sea Navigation"
+      ],
+      "answer": 0,
       "difficulty": "easy",
       "topic": "Definitions"
     },
     {
+      "type": "tf",
+      "question": "Establishing causality (cause and effect) is often more complex in human geography than in physical geography.",
+      "answer": true,
+      "difficulty": "hard",
+      "topic": "Methodology"
+    },
+    {
       "type": "mc",
-      "question": "The ratio between distance on the map and the corresponding distance on the ground is called:",
-      "options": ["Map Legend", "Map Scale", "Map Projection", "Map Key"],
-      "answer": 1,
-      "difficulty": "easy",
-      "topic": "Map Basics"
+      "question": "Which school of thought emphasizes social justice and inequality?",
+      "options": [
+        "Radical Geography",
+        "Quantitative Geography",
+        "Traditional Geography",
+        "Physical Geography"
+      ],
+      "answer": 0,
+      "difficulty": "hard",
+      "topic": "Modern Trends"
     },
     {
       "type": "tf",
-      "question": "A 'Topographic Map' shows only political boundaries like countries and cities.",
-      "answer": false,
+      "question": "Maps are essential tools for visualizing spatial relationships.",
+      "answer": true,
       "difficulty": "easy",
-      "topic": "Types of Maps"
+      "topic": "Tools of Geography"
+    },
+    {
+      "type": "mc",
+      "question": "\"Neo-determinism\" (Probabilism) is an attempt to:",
+      "options": [
+        "Reject all theories",
+        "Reconcile Determinism and Possibilism",
+        "Focus only on math",
+        "Ignore the environment"
+      ],
+      "answer": 1,
+      "difficulty": "hard",
+      "topic": "Geographical Thought"
     }
   ]
 }
