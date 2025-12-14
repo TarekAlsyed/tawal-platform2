@@ -400,7 +400,7 @@
         <header class="header">
             <h1 class="logo">📊 Tawal Academy</h1>
             <div class="header-controls">
-                <a href="control_panel.html" class="btn" title="لوحة التحكم">🏠</a>
+                <a href="index.html" class="btn" title="الرئيسية">🏠</a>
                 <button onclick="toggleTheme()" class="btn" title="تبديل الوضع">🌙</button>
             </div>
         </header>
@@ -448,10 +448,7 @@
     </div>
 
     <script>
-        // Set your backend URL here (Use the production URL or localhost)
-        const API_URL = 'https://tawal-backend-main.fly.dev/api'; 
-        // If testing locally, use: const API_URL = 'http://localhost:3000/api';
-
+        const API_URL = 'https://tawal-backend-main.fly.dev/api';
         let allStudentsData = [];
         let currentFilter = 'all';
 
@@ -503,7 +500,7 @@
         // Load All Data
         async function loadAllData() {
             try {
-                // We use the new public endpoint we added to server.js
+                // استخدام الرابط العام بدلاً من رابط الأدمن
                 const studentsRes = await fetch(`${API_URL}/students-list`);
                 if (!studentsRes.ok) throw new Error('Failed to fetch students');
                 
@@ -539,7 +536,7 @@
                     <div class="empty-state">
                         <div class="empty-state-icon">❌</div>
                         <h3>فشل تحميل البيانات</h3>
-                        <p>تأكد من تشغيل السيرفر أو الاتصال بالإنترنت</p>
+                        <p>حدث خطأ أثناء جلب البيانات من السيرفر</p>
                     </div>`;
             }
         }
