@@ -1,11 +1,10 @@
 /*
  * =================================================================================
- * CONTROL_PANEL.JS - Version 21.0.0 (FULL FUNCTIONALITY UPDATE + CRITICAL FIXES)
- * تم دمج إصلاحات الأمان (SafeName) ومعالجة البيانات الفارغة (Null Checks)
+ * CONTROL_PANEL.JS - Version 21.0.0 (FULL FUNCTIONALITY UPDATE)
+ * تم حل مشكلة زر فك حظر الجهاز وإضافة كافة الأزرار في جدول الطلاب
  * =================================================================================
  */
 
-// ✅ التعديل: تحديث الرابط ليعمل على Fly.io
 const API_URL = 'https://tawal-backend-main.fly.dev/api';
 let adminToken = localStorage.getItem('admin_token');
 
@@ -37,12 +36,10 @@ const ACTIVITY_MAP = {
 // =================================================================
 // دوال مساعدة
 // =================================================================
-
-// ✅ المشكلة 10: تحسين دالة formatDate لمعالجة القيم الفارغة والتوقيت بشكل صحيح
 function formatDate(dateString) {
-    if (!dateString || dateString === 'null' || dateString === 'undefined') return '-';
+    if (!dateString) return '-';
     try {
-        let safeDate = String(dateString).replace(' ', 'T');
+        let safeDate = dateString.replace(' ', 'T');
         if (!safeDate.includes('Z') && !safeDate.includes('+')) safeDate += 'Z';
         const d = new Date(safeDate);
         if (isNaN(d.getTime())) return '-';
@@ -98,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
     window.sendReply = sendReply;
     window.deleteMsg = deleteMsg;
     window.toggleLock = toggleLock;
-    window.exportToCSV = exportToCSV; 
+    window.exportToCSV = exportToCSV;
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -119,15 +116,31 @@ document.addEventListener('DOMContentLoaded', () => {
 function showLoginScreen() {
     document.body.innerHTML = '';
     const div = document.createElement('div');
-    div.style.cssText = `position:fixed; top:0; left:0; width:100%; height:100%; background-color: #f3f4f6; display:flex; justify-content:center; align-items:center; z-index:10000; font-family:'Inter', 'Cairo', sans-serif;`;
+    div.style.cssText = `
+        position:fixed; top:0; left:0; width:100%; height:100%;
+        background-color: #f3f4f6;
+        display:flex; justify-content:center; align-items:center;
+        z-index:10000; font-family:'Inter', 'Cairo', sans-serif;
+    `;
     div.innerHTML = `
-        <div style="background:white; padding:40px; border-radius:16px; width:100%; max-width:400px; text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;">
-            <div style="margin-bottom:20px; width:60px; height:60px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:12px; display:inline-flex; align-items:center; justify-content:center; color:white; font-size:1.5rem;">🛡️</div>
+        <div style="
+            background:white; padding:40px; border-radius:16px; width:100%; max-width:400px;
+            text-align:center; box-shadow: 0 10px 25px rgba(0,0,0,0.05); border: 1px solid #e5e7eb;
+        ">
+            <div style="margin-bottom:20px; width:60px; height:60px; background:linear-gradient(135deg, #667eea, #764ba2); border-radius:12px; display:inline-flex; align-items:center; justify-content:center; color:white; font-size:1.5rem;">
+                🛡️
+            </div>
             <h2 style="color:#111827; margin-bottom:10px; font-weight:700;">Admin Panel</h2>
             <p style="color:#6b7280; margin-bottom:30px; font-size:0.9rem;">يرجى تسجيل الدخول للمتابعة</p>
             <div style="text-align:right; margin-bottom:8px; font-size:0.85rem; font-weight:600; color:#374151;">كلمة المرور</div>
-            <input type="password" id="passInput" placeholder="••••••••" style="width:100%; padding:12px 15px; margin-bottom:20px; border:1px solid #d1d5db; border-radius:8px; outline:none; transition:0.2s;">
-            <button id="loginBtn" style="width:100%; padding:12px; background:linear-gradient(135deg, #667eea, #764ba2); color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;">تسجيل الدخول</button>
+            <input type="password" id="passInput" placeholder="••••••••" style="
+                width:100%; padding:12px 15px; margin-bottom:20px;
+                border:1px solid #d1d5db; border-radius:8px; outline:none; transition:0.2s;
+            ">
+            <button id="loginBtn" style="
+                width:100%; padding:12px; background:linear-gradient(135deg, #667eea, #764ba2);
+                color:white; border:none; border-radius:8px; cursor:pointer; font-weight:600;
+            ">تسجيل الدخول</button>
             <p id="loginErr" style="color:#ef4444; margin-top:15px; display:none; font-size:0.9rem; background:#fee2e2; padding:10px; border-radius:6px;"></p>
         </div>`;
     document.body.appendChild(div);
@@ -185,7 +198,14 @@ function addLogoutButton() {
 }
 
 async function loadAllData() {
-    await Promise.all([fetchStats(), fetchStudents(), fetchMessages(), fetchLocks(), fetchActivityLogs(), fetchLogs()]);
+    await Promise.all([
+        fetchStats(), 
+        fetchStudents(), 
+        fetchMessages(), 
+        fetchLocks(), 
+        fetchActivityLogs(), 
+        fetchLogs()
+    ]);
 }
 
 async function fetchStats() {
@@ -198,71 +218,117 @@ async function fetchStats() {
         <div class="stats-section" style="grid-template-columns: repeat(3, 1fr);">
             <div class="summary-box" style="border-bottom: 4px solid #667eea;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="summary-label">إجمالي الطلاب</div><i data-lucide="users" style="color:#667eea; opacity:0.8;"></i>
+                    <div class="summary-label">إجمالي الطلاب</div>
+                    <i data-lucide="users" style="color:#667eea; opacity:0.8;"></i>
                 </div>
                 <div class="summary-val">${data.totalStudents}</div>
             </div>
             <div class="summary-box" style="border-bottom: 4px solid #10b981;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="summary-label">الاختبارات المنجزة</div><i data-lucide="file-check" style="color:#10b981; opacity:0.8;"></i>
+                    <div class="summary-label">الاختبارات المنجزة</div>
+                    <i data-lucide="file-check" style="color:#10b981; opacity:0.8;"></i>
                 </div>
                 <div class="summary-val">${data.totalQuizzes}</div>
             </div>
             <div class="summary-box" style="border-bottom: 4px solid #f59e0b;">
                 <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <div class="summary-label">متوسط الدرجات</div><i data-lucide="bar-chart-2" style="color:#f59e0b; opacity:0.8;"></i>
+                    <div class="summary-label">متوسط الدرجات</div>
+                    <i data-lucide="bar-chart-2" style="color:#f59e0b; opacity:0.8;"></i>
                 </div>
                 <div class="summary-val">${data.averageScore}%</div>
             </div>
         </div>
-        <div style="position: relative; height: 300px; width: 100%;" id="chart-wrapper-inner"><canvas id="mainStatsChart"></canvas></div>`;
+        <div style="position: relative; height: 300px; width: 100%;" id="chart-wrapper-inner">
+             <canvas id="mainStatsChart"></canvas>
+        </div>`;
+        
     if (typeof lucide !== 'undefined') lucide.createIcons();
     if(typeof Chart !== 'undefined') setTimeout(() => renderCharts(data), 100);
 }
 
+// 🔥 التعديل هنا: إضافة زر فك حظر الجهاز (الدرع الأخضر) في عمود الإجراءات 🔥
 async function fetchStudents() {
     const res = await secureFetch('/admin/students');
     if (!res) return;
     const students = await res.json();
     GLOBAL_STUDENTS_DATA = students;
+    
     const container = document.getElementById('students-container');
-    if (students.length === 0) { container.innerHTML = '<p class="empty">لا يوجد طلاب مسجلين.</p>'; return; }
+    if (students.length === 0) {
+        container.innerHTML = '<p class="empty">لا يوجد طلاب مسجلين.</p>';
+        return;
+    }
 
     let html = `
-        <div style="margin-bottom:20px; position:relative;"><i data-lucide="search" style="position:absolute; right:12px; top:12px; width:18px; color:#9ca3af;"></i>
-            <input type="text" id="student-search-input" placeholder="بحث عن طالب..." style="width:100%; padding:10px 40px 10px 10px; border:1px solid #e5e7eb; border-radius:10px;">
+        <div style="margin-bottom:20px; position:relative;">
+            <i data-lucide="search" style="position:absolute; right:12px; top:12px; width:18px; color:#9ca3af;"></i>
+            <input type="text" id="student-search-input" placeholder="بحث عن طالب..." 
+            style="width:100%; padding:10px 40px 10px 10px; border:1px solid #e5e7eb; border-radius:10px;">
         </div>
-        <div class="admin-table-container"><table class="admin-table" id="students-table">
-            <thead><tr><th>الاسم</th><th>البريد</th><th>التسجيل</th><th>الحالة</th><th>إجراءات</th></tr></thead><tbody>`;
+        <div class="admin-table-container">
+        <table class="admin-table" id="students-table">
+            <thead>
+                <tr>
+                    <th>الاسم</th>
+                    <th>البريد</th>
+                    <th>التسجيل</th>
+                    <th>الحالة</th>
+                    <th>إجراءات</th>
+                </tr>
+            </thead>
+            <tbody>`;
 
     students.forEach(s => {
         const isBlocked = s.isblocked; 
-        // ✅ المشكلة 1: إصلاح الـ Escape character لعلامة التنصيص التي كانت تكسر الأكواد
-        const safeNameForDelete = (s.name || '').replace(/'/g, "&#39;"); 
+        const safeName = (s.name || '').replace(/'/g, "\\'"); 
         html += `
             <tr>
                 <td>
                     <div style="display:flex; align-items:center; gap:10px;">
-                        <div style="width:32px; height:32px; background:#e0e7ff; color:#4e54c8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${s.name.charAt(0)}</div>
+                        <div style="width:32px; height:32px; background:#e0e7ff; color:#4e54c8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">
+                            ${s.name ? s.name.charAt(0) : '?'}
+                        </div>
                         <span class="clickable-student" onclick="showStudentDetails(${s.id})">${s.name}</span>
                     </div>
                 </td>
-                <td style="color:#6b7280;">${s.email}</td>
+                <td style="color:#6b7280; font-size:0.9rem;">${s.email}</td>
                 <td style="font-size:0.85rem; color:#9ca3af;">${formatDate(s.createdat)}</td>
                 <td><span class="badge ${isBlocked ? 'bg-red' : 'bg-green'}">${isBlocked ? 'محظور' : 'نشط'}</span></td>
                 <td style="display:flex; gap:8px;">
-                    <button class="btn ${isBlocked ? 'btn-green' : 'btn-red'}" onclick="toggleBlock(${s.id}, ${isBlocked})"><i data-lucide="${isBlocked ? 'unlock' : 'lock'}" style="width:16px;"></i></button>
-                    <button class="btn" style="background:#f3f4f6;" onclick="blockFP(${s.id})"><i data-lucide="smartphone" style="width:16px;"></i></button>
-                    <button class="btn" style="background:#fee2e2; color:#ef4444;" onclick="deleteUser(${s.id}, '${safeNameForDelete}')"><i data-lucide="trash-2" style="width:16px;"></i></button>
+                    <button class="btn ${isBlocked ? 'btn-green' : 'btn-red'}" 
+                            style="padding:6px; border-radius:6px;" 
+                            onclick="toggleBlock(${s.id}, ${isBlocked})" 
+                            title="${isBlocked ? 'فك حظر الحساب' : 'حظر الحساب'}">
+                        <i data-lucide="${isBlocked ? 'unlock' : 'lock'}" style="width:16px; height:16px;"></i>
+                    </button>
+                    
+                    <button class="btn" style="background:#f3f4f6; color:#4b5563; padding:6px; border-radius:6px;" 
+                            onclick="blockFP(${s.id})" title="حظر بصمة الجهاز">
+                        <i data-lucide="smartphone" style="width:16px; height:16px;"></i>
+                    </button>
+                    
+                    <button class="btn" style="background:#ecfdf5; color:#10b981; padding:6px; border-radius:6px;" 
+                            onclick="unblockFP(${s.id})" title="فك حظر بصمة الجهاز">
+                        <i data-lucide="shield-check" style="width:16px; height:16px;"></i>
+                    </button>
+                    
+                    <button class="btn" style="background:#fee2e2; color:#ef4444; padding:6px; border-radius:6px;" 
+                            onclick="deleteUser(${s.id}, '${safeName}')" title="حذف نهائي">
+                        <i data-lucide="trash-2" style="width:16px; height:16px;"></i>
+                    </button>
                 </td>
             </tr>`;
     });
     container.innerHTML = html + '</tbody></table></div>';
-    if (typeof lucide !== 'undefined') lucide.createIcons();
+
     document.getElementById('student-search-input').addEventListener('input', (e) => {
         const filter = e.target.value.toLowerCase();
-        document.querySelectorAll('#students-table tbody tr').forEach(row => { row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none'; });
+        document.querySelectorAll('#students-table tbody tr').forEach(row => {
+            row.style.display = row.textContent.toLowerCase().includes(filter) ? '' : 'none';
+        });
     });
+
+    if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
 async function fetchActivityLogs() {
@@ -273,23 +339,20 @@ async function fetchActivityLogs() {
     let html = `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>الطالب</th><th>النشاط</th><th>التفاصيل</th><th>الوقت</th></tr></thead><tbody>`;
     activities.forEach(a => {
         const type = a.activityType || a.activitytype;
-        html += `<tr><td style="font-weight:600;">${a.studentName}</td><td>${ACTIVITY_MAP[type] || type}</td><td>${a.subjectName || a.subjectname || '-'}</td><td style="color:#9ca3af;">${formatDate(a.date)}</td></tr>`;
+        html += `<tr><td>${a.studentName}</td><td>${ACTIVITY_MAP[type] || type}</td><td>${a.subjectName || a.subjectname || '-'}</td><td>${formatDate(a.date)}</td></tr>`;
     });
     container.innerHTML = html + '</tbody></table></div>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
 }
 
-// ✅ المشكلة 6: تحسين دالة showStudentDetails مع إضافة Null Checks وفلترة النتائج
 window.showStudentDetails = async (studentId) => {
     const modal = document.getElementById('student-modal');
     const modalName = document.getElementById('modal-student-name');
     const modalStats = document.getElementById('modal-stats-container');
     const modalResults = document.getElementById('modal-results-container');
     const modalActivity = document.getElementById('modal-activity-container');
-    
     modalName.innerText = 'جاري التحميل...';
     modal.style.display = 'block';
-
     try {
         const [student, stats, results, activityLogs] = await Promise.all([
             secureFetch(`/students/${studentId}`).then(r => r ? r.json() : {}),
@@ -297,41 +360,17 @@ window.showStudentDetails = async (studentId) => {
             secureFetch(`/students/${studentId}/results`).then(r => r ? r.json() : []),
             secureFetch(`/students/${studentId}/activity`).then(r => r ? r.json() : [])
         ]);
-
-        modalName.innerHTML = `<div style="display:flex; align-items:center; gap:15px;"><div style="width:50px; height:50px; background:#e0e7ff; color:#4e54c8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold;">${student.name ? student.name.charAt(0) : '?'}</div><div><div>${student.name || 'غير معروف'}</div><div style="font-size:0.85rem; color:#6b7280;">${student.email || ''}</div></div></div>`;
-
-        modalStats.innerHTML = `<div class="stats-section" style="grid-template-columns: repeat(3, 1fr); gap:15px; margin-bottom:0;"><div class="summary-box"> <p class="summary-label">الاختبارات</p><p class="summary-val">${stats.totalQuizzes || 0}</p></div><div class="summary-box"><p class="summary-label">المعدل</p><p class="summary-val">${stats.averageScore || 0}%</p></div><div class="summary-box"><p class="summary-label">الأفضل</p><p class="summary-val">${stats.bestScore || 0}%</p></div></div>`;
-
-        // فحص مصفوفة النتائج بعناية
-        let resultsHtml = '';
-        if (!results || !Array.isArray(results) || results.length === 0) {
-            resultsHtml = '<p class="empty">لم يقم بأي اختبار بعد.</p>';
-        } else {
-            resultsHtml = '<div class="admin-table-container"><table class="admin-table"><thead><tr><th>الاختبار</th><th>النتيجة</th><th>التاريخ</th></tr></thead><tbody>';
-            results.filter(r => r).forEach(r => {
-                const sId = r.subjectId || r.subjectid;
-                const score = Math.max(0, Math.min(100, parseInt(r.score) || 0));
-                const color = score >= 90 ? '#10b981' : score >= 50 ? '#3b82f6' : '#ef4444';
-                resultsHtml += `<tr><td>${SUBJECTS_LIST[sId] || r.quizName || r.quizname}</td><td><span style="background:${color}20; color:${color}; padding:2px 8px; border-radius:4px; font-weight:bold;">${score}%</span></td><td>${formatDate(r.completedAt || r.completedat)}</td></tr>`;
-            });
-            resultsHtml += '</tbody></table></div>';
-        }
+        modalName.innerHTML = `<div>${student.name || 'غير معروف'}</div><div style="font-size:0.85rem; color:#6b7280;">${student.email || ''}</div>`;
+        modalStats.innerHTML = `<div class="stats-section" style="grid-template-columns: repeat(3, 1fr); gap:15px;"><div class="summary-box"><p class="summary-label">الاختبارات</p><p class="summary-val">${stats.totalQuizzes || 0}</p></div><div class="summary-box"><p class="summary-label">المعدل</p><p class="summary-val">${stats.averageScore || 0}%</p></div><div class="summary-box"><p class="summary-label">الأفضل</p><p class="summary-val">${stats.bestScore || 0}%</p></div></div>`;
+        
+        let resultsHtml = results.length === 0 ? '<p class="empty">لا توجد نتائج.</p>' : '<div class="admin-table-container"><table class="admin-table"><thead><tr><th>الاختبار</th><th>النتيجة</th><th>التاريخ</th></tr></thead><tbody>' + 
+            results.map(r => `<tr><td>${SUBJECTS_LIST[r.subjectId || r.subjectid] || r.quizName}</td><td>${r.score}%</td><td>${formatDate(r.completedAt || r.completedat)}</td></tr>`).join('') + '</tbody></table></div>';
         modalResults.innerHTML = resultsHtml;
-
-        let activityHtml = '';
-        if (!activityLogs || activityLogs.length === 0) {
-            activityHtml = '<p class="empty">لا يوجد نشاط مسجل.</p>';
-        } else {
-            activityHtml = '<div class="admin-table-container" style="max-height:300px; overflow-y:auto;"><table class="admin-table"><thead><tr><th>النشاط</th><th>التفاصيل</th><th>الوقت</th></tr></thead><tbody>';
-            activityLogs.forEach(l => {
-                const type = l.activitytype || l.activityType;
-                activityHtml += `<tr><td>${ACTIVITY_MAP[type] || type}</td><td>${l.subjectname || l.subjectName || '-'}</td><td>${formatDate(l.timestamp)}</td></tr>`;
-            });
-            activityHtml += '</tbody></table></div>';
-        }
+        
+        let activityHtml = activityLogs.length === 0 ? '<p class="empty">لا يوجد نشاط.</p>' : '<div class="admin-table-container"><table class="admin-table"><thead><tr><th>النشاط</th><th>التفاصيل</th><th>الوقت</th></tr></thead><tbody>' + 
+            activityLogs.map(l => `<tr><td>${ACTIVITY_MAP[l.activitytype] || l.activitytype}</td><td>${l.subjectname || '-'}</td><td>${formatDate(l.timestamp)}</td></tr>`).join('') + '</tbody></table></div>';
         if(modalActivity) modalActivity.innerHTML = activityHtml;
-
-    } catch (e) { modalStats.innerHTML = '<p class="empty">فشل تحميل البيانات.</p>'; }
+    } catch (e) { console.error(e); }
     if (typeof lucide !== 'undefined') lucide.createIcons();
 };
 
@@ -340,13 +379,13 @@ async function fetchMessages() {
     if (!res) return;
     const msgs = await res.json();
     const container = document.getElementById('messages-container');
-    if (msgs.length === 0) { container.innerHTML = '<p class="empty">لا توجد رسائل جديدة.</p>'; return; }
+    if (msgs.length === 0) { container.innerHTML = '<p class="empty">لا توجد رسائل.</p>'; return; }
     container.innerHTML = msgs.map(m => `
         <div style="padding: 15px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; background: #fff; border-right: 4px solid ${m.adminreply ? '#10b981' : '#f59e0b'};">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><strong>${m.studentName || 'طالب'}</strong><span style="font-size:0.75rem;">${formatDate(m.createdat)}</span></div>
+            <div style="display:flex; justify-content:space-between; margin-bottom:8px;"><strong>${m.studentName || 'طالب'}</strong><span>${formatDate(m.createdat)}</span></div>
             <div style="background:#f9fafb; padding:10px; border-radius:8px; margin-bottom:10px;">${m.content}</div>
             ${m.adminreply ? `<div>✅ تم الرد: ${m.adminreply}</div>` : `<div><input type="text" id="reply-${m.id}" placeholder="رد..."><button onclick="sendReply(${m.id})">إرسال</button></div>`}
-            <button onclick="deleteMsg(${m.id})" style="color:red; background:none; border:none; cursor:pointer; font-size:0.8rem;">حذف</button>
+            <button onclick="deleteMsg(${m.id})" style="color:red; background:none; border:none; cursor:pointer; font-size:0.8rem; margin-top:5px;">حذف</button>
         </div>`).join('');
 }
 
@@ -379,15 +418,16 @@ window.toggleBlock = async (id, currentStatus) => {
 };
 
 window.blockFP = async (id) => {
-    if(!confirm('حظر بصمة الجهاز؟')) return;
+    if(!confirm('هل تريد حظر بصمة جهاز هذا الطالب؟')) return;
     const res = await secureFetch(`/admin/students/${id}/block-fingerprint`, { method: 'POST' });
-    if(res) showToast('تم حظر الجهاز');
+    if(res && res.ok) showToast('✅ تم حظر الجهاز بنجاح');
 };
 
+// وظيفة فك حظر الجهاز
 window.unblockFP = async (id) => {
-    if(!confirm('فك حظر الجهاز؟')) return;
+    if(!confirm('هل تريد فك حظر بصمة جهاز هذا الطالب؟')) return;
     const res = await secureFetch(`/admin/students/${id}/unblock-fingerprint`, { method: 'POST' });
-    if(res) showToast('تم فك حظر الجهاز');
+    if(res && res.ok) showToast('✅ تم فك حظر الجهاز بنجاح');
 };
 
 window.sendReply = async (id) => {
