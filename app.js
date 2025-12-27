@@ -1,12 +1,13 @@
 /*
  * =================================================================================
- * APP.JS - Version 21.0.0 (Ultimate Fixes + Performance Optimization)
- * تم دمج كافة الإصلاحات: Retry Logic, Timeout, Activity Sync, 404 Handling
+ * APP.JS - Version 22.0.0 (Analytics & Data Tracking Added)
+ * تم دمج الإصلاحات: Retry Logic, Timeout, Activity Sync, 404 Handling
+ * تم إضافة: Quiz Timer, Detailed Results Storage, Analytics Button
  * =================================================================================
  */
 
 // 1. الثوابت والإعدادات
-// ✅ التعديل: استخدام رابط Fly.io الذي تم الرفع عليه بنجاح في الخطوة السابقة
+// ✅ التعديل: استخدام رابط Fly.io الذي تم الرفع عليه بنجاح
 const API_URL = 'https://tawal-backend-main.fly.dev/api';
 const STORAGE_KEY_STUDENT_ID = 'tawal_student_id_v2';
 const STORAGE_KEY_USER = 'tawal_user_data_v2';
@@ -65,7 +66,7 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// ✅ المشكلة 2: تحسين recordActivity لتكون Async وتنتظر الرد لضمان التسجيل في السيرفر
+// ✅ تحسين recordActivity لتكون Async وتنتظر الرد لضمان التسجيل
 async function recordActivity(type, name) {
     if (!CURRENT_STUDENT_ID) return;
     try {
@@ -132,7 +133,7 @@ function showError(title, message) {
     else showToast(`${title}: ${message}`, 'error');
 }
 
-// ✅ المشكلة 10: تحسين تنسيق التاريخ والوقت لضمان العمل على جميع المتصفحات
+// ✅ تحسين تنسيق التاريخ والوقت
 function formatDate(dateString) {
     if (!dateString || dateString === 'null' || dateString === 'undefined') return '-';
     try {
@@ -151,7 +152,7 @@ function formatDate(dateString) {
 // =================================================================
 // 3. الاتصال بالسيرفر (API) مع الـ Retry Logic
 // =================================================================
-// ✅ المشكلة 12: إضافة خاصية الـ Retries والـ Timeout لضمان استقرار الاتصال
+// ✅ إضافة خاصية الـ Retries والـ Timeout لضمان استقرار الاتصال
 async function apiRequest(endpoint, opts = {}, retries = 2) {
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
@@ -221,7 +222,7 @@ async function getFingerprint() {
 document.addEventListener('DOMContentLoaded', async () => {
     initThemeToggle();
     
-    // ✅ المشكلة 5: تحسين جلب الإحصائيات مع Timeout وبيانات بديلة (Fallback)
+    // ✅ تحسين جلب الإحصائيات مع Timeout وبيانات بديلة
     if (document.getElementById('total-students')) {
         const fetchWithTimeout = (url, timeout = 5000) => {
             return Promise.race([
@@ -272,7 +273,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if ($('dashboard-content')) initDashboardPage();
 });
 
-// ✅ المشكلة 8: التحسين الذكي للتحقق ومسح الجلسة إذا كان الطالب محذوفاً (404)
+// ✅ التحسين الذكي للتحقق ومسح الجلسة (404 Handling)
 async function verifyStudent() {
     if (!CURRENT_STUDENT_ID) return false;
     try { 
@@ -355,7 +356,7 @@ function initThemeToggle() {
     }; 
 }
 
-// ✅ المشكلة 6: تحسين animateCounter مع التحقق من قيمة الهدف (Target)
+// ✅ تحسين animateCounter
 function animateCounter(element, target, duration = 2000) {
     if (!element || target === null || target === undefined) return;
     let start = 0;
@@ -576,13 +577,17 @@ window.loadLevelFile = async (key, idx) => {
 };
 
 // =================================================================
-// 10. محرك الاختبار (Quiz Engine)
+// 10. محرك الاختبار (Quiz Engine) - مع التعديلات الجديدة
 // =================================================================
 function runQuizEngine(questions, title, subjectId) {
     if (!questions || questions.length === 0) return;
     QUIZ_IN_PROGRESS = true; let idx = 0, correct = 0, incorrectList = [];
     const shuffled = shuffleArray(questions);
     const body = $('quiz-body'), footer = $('quiz-footer'), nextBtn = $('next-btn');
+    
+    // 🔥 التعديل الأول: حفظ وقت بداية الاختبار
+    window.quizStartTime = Date.now();
+
     body.style.display = 'block'; footer.style.display = 'block'; nextBtn.style.display = 'block';
     $('quiz-title').innerText = title;
     body.innerHTML = `<h3 id="q-txt" style="margin-bottom:1.5rem;"></h3><div id="opts" class="options-container"></div><p id="fb" class="feedback"></p>`;
@@ -610,17 +615,52 @@ function runQuizEngine(questions, title, subjectId) {
             optsDiv.appendChild(b);
         });
     }
+
     nextBtn.onclick = () => { if(idx < shuffled.length-1) { idx++; loadQ(); } else { showResults(); } };
     
     async function showResults() {
         QUIZ_IN_PROGRESS = false; body.style.display = 'none'; footer.style.display = 'none';
         const resDiv = $('results-container'); resDiv.style.display = 'flex';
         const percent = Math.round((correct / questions.length) * 100);
+
+        // 🔥 التعديل الثاني: حفظ البيانات لصفحة التحليل
+        const resultData = {
+            score: percent,
+            correct: correct,
+            total: questions.length,
+            wrong: incorrectList.map(q => ({
+                question: q.question,
+                correctAnswer: q.type === 'tf' 
+                    ? (String(q.answer).toLowerCase() === 'true' ? 'صح' : 'خطأ')
+                    : q.options[q.answer]
+            })),
+            quizName: title,
+            subject: getSubjectKey(),
+            timeTaken: Math.round((Date.now() - window.quizStartTime) / 1000)
+        };
+        localStorage.setItem('quiz_result_data', JSON.stringify(resultData));
+
         if (!title.includes('مراجعة')) {
             await apiRequest('/quiz-results', { method: 'POST', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID, quizName: title, score: percent, totalQuestions: questions.length, correctAnswers: correct, subjectId: subjectId || getSubjectKey() }) });
         }
-        resDiv.innerHTML = `<h2>النتيجة: ${percent}%</h2><button onclick="location.reload()" class="next-btn">🔄 إعادة</button>
-            <a href="quiz.html?subject=${getSubjectKey()}" class="card-btn">📂 خروج</a>`;
+
+        // 🔥 التعديل الثالث: إضافة زر التحليل الشامل في الواجهة
+        resDiv.innerHTML = `
+            <h2>النتيجة: ${percent}%</h2>
+            
+            <div style="background:linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1)); padding:2rem; border-radius:15px; margin:2rem 0; border:2px solid var(--primary-color); width:100%; max-width:500px; text-align:center;">
+                <div style="font-size:1.5rem; margin-bottom:1rem;">📊 هل تريد تحليلاً شاملاً؟</div>
+                <p style="color:var(--text-color-light); margin-bottom:1.5rem;">شاهد تحليلاً تفصيلياً لأدائك مع توصيات مخصصة وذكية</p>
+                <a href="analytics.html" class="next-btn" style="display:inline-block; background:var(--primary-gradient); padding:1rem 2rem; text-decoration:none; color:white; border-radius:50px;">
+                    🔍 عرض التحليل الشامل
+                </a>
+            </div>
+
+            <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+                <button onclick="location.reload()" class="next-btn">🔄 إعادة</button>
+                <a href="quiz.html?subject=${getSubjectKey()}" class="card-btn">📂 خروج</a>
+            </div>
+        `;
     }
     loadQ();
 }
