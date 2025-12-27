@@ -11,7 +11,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        /* تعريف المتغيرات الخاصة بالتحليل */
         :root {
             --glass-bg: rgba(255, 255, 255, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.2);
@@ -23,15 +22,12 @@
             --glass-bg: rgba(30, 30, 40, 0.95);
             --glass-border: 1px solid rgba(255, 255, 255, 0.05);
         }
-
         .analytics-container {
             max-width: 1100px;
             margin: 2rem auto;
             padding: 0 1.5rem;
             animation: fadeIn 0.6s ease;
         }
-
-        /* كروت العرض */
         .analytics-card {
             background: var(--bg-secondary-color);
             border-radius: 20px;
@@ -40,8 +36,6 @@
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
-
-        /* الهيدر الخاص بالنتيجة */
         .result-header {
             display: grid;
             grid-template-columns: 1fr;
@@ -51,8 +45,6 @@
         @media (min-width: 768px) {
             .result-header { grid-template-columns: 300px 1fr; }
         }
-
-        /* الدائرة التفاعلية للدرجة */
         .circular-chart {
             display: block;
             margin: 0 auto;
@@ -74,8 +66,6 @@
             text-anchor: middle; 
         }
         @keyframes progress { 0% { stroke-dasharray: 0 100; } }
-
-        /* تفاصيل النتيجة */
         .score-details h2 { margin-bottom: 0.5rem; font-size: 2rem; }
         .score-tag {
             display: inline-block;
@@ -87,8 +77,6 @@
             border: 1px solid var(--primary-color);
             margin-bottom: 1rem;
         }
-
-        /* شبكة الإحصائيات المصغرة */
         .mini-stats {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -102,15 +90,12 @@
             text-align: center;
             border: 1px solid var(--border-color);
         }
-
-        /* قسم تحليل الصعوبة والمواضيع */
         .deep-analysis-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
             gap: 2rem;
             margin-bottom: 2rem;
         }
-
         .progress-container { margin-bottom: 1.2rem; }
         .progress-label {
             display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;
@@ -119,8 +104,6 @@
             width: 100%; height: 8px; background: var(--bg-color); border-radius: 10px; overflow: hidden;
         }
         .progress-bar-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
-
-        /* بادجات المواضيع */
         .topic-badges {
             display: flex; flex-wrap: wrap; gap: 10px;
         }
@@ -132,10 +115,9 @@
             border: 1px solid transparent;
             background: var(--bg-color);
             transition: transform 0.2s;
+            min-width: 150px;
         }
         .topic-badge:hover { transform: translateY(-3px); }
-
-        /* كروت الأخطاء */
         .mistake-card {
             background: var(--bg-secondary-color);
             border-right: 4px solid var(--color-incorrect);
@@ -146,13 +128,11 @@
             border: 1px solid var(--border-color);
         }
         .mistake-meta {
-            display: flex; gap: 10px; margin-bottom: 10px; font-size: 0.8rem;
+            display: flex; gap: 10px; margin-bottom: 10px; font-size: 0.8rem; flex-wrap: wrap;
         }
         .meta-tag {
             padding: 2px 8px; border-radius: 4px; background: var(--bg-color); border: 1px solid var(--border-color);
         }
-
-        /* التوصيات */
         .rec-item {
             background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
             border: 1px solid var(--primary-color);
@@ -161,10 +141,13 @@
             display: flex; align-items: center; gap: 1rem;
             margin-bottom: 1rem;
         }
-
-        /* أزرار التحكم */
         .action-bar {
             display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem;
+        }
+        .empty-message {
+            text-align: center;
+            padding: 3rem;
+            color: var(--text-color-light);
         }
     </style>
 </head>
@@ -176,7 +159,7 @@
                 Tawal Academy
             </h1>
             <div class="header-controls">
-                <a href="index.html" class="dashboard-link">🏠</a>
+                <a href="index.html" class="dashboard-link" title="الرئيسية">🏠</a>
                 <button id="theme-toggle-btn" class="theme-toggle-btn">🌗</button>
             </div>
         </header>
@@ -190,7 +173,7 @@
     </div>
 
     <script>
-        // 1. إعدادات الثيم
+        // Theme Toggle
         const themeBtn = document.getElementById('theme-toggle-btn');
         if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
         themeBtn.onclick = () => {
@@ -198,7 +181,7 @@
             localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
         };
 
-        // 2. تشغيل التقرير
+        // Generate Report
         document.addEventListener('DOMContentLoaded', () => {
             setTimeout(generateReport, 500);
         });
@@ -207,7 +190,6 @@
             const container = document.getElementById('report-container');
             const rawData = localStorage.getItem('quiz_result_data');
 
-            // التحقق من وجود بيانات
             if (!rawData) {
                 container.innerHTML = `
                     <div class="analytics-card" style="text-align:center">
@@ -220,16 +202,12 @@
             }
 
             const data = JSON.parse(rawData);
-            
-            // استخراج البيانات الأساسية
-            const score = data.score;
-            const detailed = data.detailedAnalysis || { byDifficulty: {}, byCategory: {} }; // الاعتماد على البيانات القادمة من app.js
+            const score = data.score || 0;
+            const detailed = data.detailedAnalysis || { byDifficulty: {}, byCategory: {} };
 
-            // تحديد لون الرسم البياني
             let strokeColor = score >= 90 ? '#2ecc71' : score >= 75 ? '#3498db' : score >= 50 ? '#f1c40f' : '#e74c3c';
-            let message = score >= 90 ? 'أداء أسطوري!' : score >= 75 ? 'ممتاز جداً' : score >= 50 ? 'جيد، استمر' : 'تحتاج لمزيد من التركيز';
+            let message = score >= 90 ? 'أداء أسطوري! 👑' : score >= 75 ? 'ممتاز جداً 🌟' : score >= 50 ? 'جيد، استمر 💪' : 'تحتاج لمزيد من التركيز 📚';
 
-            // بناء واجهة التقرير
             let html = `
                 <div class="analytics-card result-header">
                     <div style="text-align:center;">
@@ -240,21 +218,21 @@
                         </svg>
                     </div>
                     <div class="score-details">
-                        <span class="score-tag">${data.quizName}</span>
+                        <span class="score-tag">${data.quizName || 'اختبار'}</span>
                         <h2 style="color:${strokeColor}">${message}</h2>
-                        <p style="color:var(--text-color-light)">تم الانتهاء في ${formatTime(data.timeTaken)}</p>
+                        <p style="color:var(--text-color-light)">تم الانتهاء في ${formatTime(data.timeTaken || 0)}</p>
                         
                         <div class="mini-stats">
                             <div class="mini-stat-box">
-                                <div style="font-weight:bold; font-size:1.2rem;">${data.total}</div>
+                                <div style="font-weight:bold; font-size:1.2rem;">${data.total || 0}</div>
                                 <div style="font-size:0.8rem; opacity:0.7">الأسئلة</div>
                             </div>
                             <div class="mini-stat-box" style="border-color:var(--color-correct)">
-                                <div style="font-weight:bold; font-size:1.2rem; color:var(--color-correct)">${data.correct}</div>
+                                <div style="font-weight:bold; font-size:1.2rem; color:var(--color-correct)">${data.correct || 0}</div>
                                 <div style="font-size:0.8rem; opacity:0.7">صحيحة</div>
                             </div>
                             <div class="mini-stat-box" style="border-color:var(--color-incorrect)">
-                                <div style="font-weight:bold; font-size:1.2rem; color:var(--color-incorrect)">${data.wrong.length}</div>
+                                <div style="font-weight:bold; font-size:1.2rem; color:var(--color-incorrect)">${(data.wrong || []).length}</div>
                                 <div style="font-size:0.8rem; opacity:0.7">خاطئة</div>
                             </div>
                         </div>
@@ -270,12 +248,12 @@
                         ${renderDifficultyBar('سهل (Easy)', detailed.byDifficulty.easy, 'var(--easy-color)')}
                         ${renderDifficultyBar('متوسط (Medium)', detailed.byDifficulty.medium, 'var(--medium-color)')}
                         ${renderDifficultyBar('صعب (Hard)', detailed.byDifficulty.hard, 'var(--hard-color)')}
-                        ${Object.keys(detailed.byDifficulty).length === 0 ? '<p style="text-align:center; color:#777">لا توجد بيانات صعوبة</p>' : ''}
+                        ${Object.keys(detailed.byDifficulty).length === 0 ? '<p style="text-align:center; color:#777">لا توجد بيانات صعوبة متاحة</p>' : ''}
                     </div>
 
                     <div class="analytics-card">
                         <h3 style="margin-bottom:1.5rem; display:flex; align-items:center; gap:10px;">
-                            <span>📚</span> إتقان فصول المادة (Topics)
+                            <span>📚</span> إتقان المواضيع
                         </h3>
                         <div class="topic-badges">
                             ${renderTopicBadges(detailed.byCategory)}
@@ -284,23 +262,24 @@
                 </div>
 
                 <div class="analytics-card">
-                    <h3 style="margin-bottom:1.5rem; color:var(--color-incorrect)">❌ مراجعة الأخطاء</h3>
-                    ${data.wrong.length === 0 
-                        ? `<div style="text-align:center; padding:2rem;">
+                    <h3 style="margin-bottom:1.5rem; color:var(--color-incorrect); display:flex; align-items:center; gap:10px;">
+                        <span>❌</span> مراجعة الأخطاء
+                    </h3>
+                    ${(data.wrong || []).length === 0 
+                        ? `<div class="empty-message">
                             <div style="font-size:3rem;">🎉</div>
                             <p>أحسنت! لا توجد أي أخطاء.</p>
                            </div>` 
-                        : data.wrong.map((w, i) => `
+                        : (data.wrong || []).map((w, i) => `
                             <div class="mistake-card">
                                 <div class="mistake-meta">
-                                    <span class="meta-tag" style="background:var(--bg-color)">📂 ${w.category || w.topic || 'عام'}</span>
-                                    <span class="meta-tag" style="border-color:${getDiffColor(w.difficulty)}">
+                                    <span class="meta-tag">📂 ${w.category || 'عام'}</span>
+                                    <span class="meta-tag" style="border-color:${getDiffColor(w.difficulty)}; color:${getDiffColor(w.difficulty)}">
                                         ${w.difficulty === 'hard' ? '🔥 صعب' : w.difficulty === 'easy' ? '🟢 سهل' : '⚖️ متوسط'}
                                     </span>
                                 </div>
-                                <p style="font-weight:bold; margin-bottom:0.8rem; font-size:1.1rem;">${i+1}. ${w.question}</p>
+                                <p style="font-weight:bold; margin-bottom:0.8rem; font-size:1.05rem;">${i+1}. ${w.question}</p>
                                 <div style="display:flex; flex-direction:column; gap:0.5rem;">
-                                    <div style="font-size:0.9rem; color:var(--color-incorrect); text-decoration:line-through;">إجابتك: خطأ</div>
                                     <div style="background:rgba(46, 204, 113, 0.1); padding:0.8rem; border-radius:8px; border:1px solid var(--color-correct); color:var(--color-correct); font-weight:bold;">
                                         ✅ الإجابة الصحيحة: ${w.correctAnswer}
                                     </div>
@@ -311,8 +290,10 @@
                 </div>
 
                 <div class="analytics-card">
-                    <h3 style="margin-bottom:1.5rem;">💡 توصيات الذكاء الاصطناعي</h3>
-                    ${generateRecommendations(score, detailed).map(rec => `
+                    <h3 style="margin-bottom:1.5rem; display:flex; align-items:center; gap:10px;">
+                        <span>💡</span> توصيات الذكاء الاصطناعي
+                    </h3>
+                    ${generateRecommendations(score, detailed, data).map(rec => `
                         <div class="rec-item">
                             <span style="font-size:1.5rem">${rec.icon}</span>
                             <span>${rec.text}</span>
@@ -321,8 +302,8 @@
                 </div>
 
                 <div class="action-bar">
-                    <a href="quiz.html?subject=${data.subject}" class="card-btn btn-quiz">🔄 إعادة الاختبار</a>
-                    <a href="summary.html?subject=${data.subject}" class="card-btn btn-summary">📖 المذاكرة</a>
+                    <a href="quiz.html?subject=${data.subject || 'gis_networks'}" class="card-btn btn-quiz">🔄 إعادة الاختبار</a>
+                    <a href="summary.html?subject=${data.subject || 'gis_networks'}" class="card-btn btn-summary">📖 المذاكرة</a>
                     <a href="index.html" class="card-btn" style="background:transparent; border:1px solid var(--text-color)">🏠 الرئيسية</a>
                 </div>
             `;
@@ -330,7 +311,7 @@
             container.innerHTML = html;
         }
 
-        // --- دوال مساعدة ---
+        // Helper Functions
 
         function formatTime(seconds) {
             const m = Math.floor(seconds / 60);
@@ -361,39 +342,62 @@
         }
 
         function renderTopicBadges(categories) {
-            if(!categories || Object.keys(categories).length === 0) return '<p style="color:#777">التحليل حسب الموضوع غير متوفر</p>';
+            if(!categories || Object.keys(categories).length === 0) {
+                return '<p style="color:#777; text-align:center; padding:1rem;">لا توجد بيانات مواضيع</p>';
+            }
+            
             return Object.entries(categories).map(([cat, stats]) => {
                 const pct = Math.round((stats.correct / stats.total) * 100);
                 let color = pct >= 80 ? 'var(--easy-color)' : pct >= 50 ? 'var(--medium-color)' : 'var(--hard-color)';
                 let bg = pct >= 80 ? 'rgba(46, 204, 113, 0.1)' : pct >= 50 ? 'rgba(241, 196, 15, 0.1)' : 'rgba(231, 76, 60, 0.1)';
                 return `
                     <div class="topic-badge" style="background:${bg}; border-color:${color}; color:${color}">
-                        <div style="font-size:0.85rem; opacity:0.9">${cat}</div>
-                        <div style="font-weight:bold; font-size:1.1rem;">${pct}%</div>
+                        <div style="font-size:0.85rem; opacity:0.9; margin-bottom:0.3rem;">${cat}</div>
+                        <div style="font-weight:bold; font-size:1.2rem;">${pct}%</div>
+                        <div style="font-size:0.7rem; opacity:0.7;">${stats.correct}/${stats.total}</div>
                     </div>
                 `;
             }).join('');
         }
 
-        function generateRecommendations(score, detailed) {
+        function generateRecommendations(score, detailed, data) {
             let tips = [];
             
-            // توصيات بناءً على الدرجة
-            if(score === 100) tips.push({icon:'👑', text:'مستواك مثالي! أنت جاهز تماماً للامتحان.'});
-            else if(score < 60) tips.push({icon:'📖', text:'ينصح بمراجعة الملخصات الشاملة قبل المحاولة مرة أخرى.'});
-
-            // توصيات بناءً على الصعوبة
-            if(detailed.byDifficulty.easy && detailed.byDifficulty.easy.correct < detailed.byDifficulty.easy.total) {
-                tips.push({icon:'⚠️', text:'لديك أخطاء في الأسئلة السهلة، ركز ولا تتسرع.'});
+            // توصيات الدرجة
+            if(score === 100) {
+                tips.push({icon:'👑', text:'مستواك مثالي! أنت جاهز تماماً للامتحان الفعلي.'});
+            } else if(score >= 90) {
+                tips.push({icon:'🌟', text:'أداء ممتاز! راجع الأخطاء القليلة وستكون مستعداً 100%.'});
+            } else if(score >= 75) {
+                tips.push({icon:'💪', text:'أداء جيد جداً! ركز على المواضيع الضعيفة لتصل للامتياز.'});
+            } else if(score >= 50) {
+                tips.push({icon:'📚', text:'تحتاج لمراجعة أعمق. ابدأ بالملخصات ثم أعد الاختبار.'});
+            } else {
+                tips.push({icon:'⚠️', text:'الدرجة منخفضة. راجع المادة كاملة قبل المحاولة القادمة.'});
             }
-            if(detailed.byDifficulty.hard && detailed.byDifficulty.hard.correct < (detailed.byDifficulty.hard.total / 2)) {
-                tips.push({icon:'🔥', text:'تحتاج للتدرب أكثر على الأسئلة ذات المستوى المتقدم (Hard).'});
+
+            // توصيات الصعوبة
+            const easy = detailed.byDifficulty.easy;
+            if(easy && easy.total > 0 && easy.correct < easy.total) {
+                tips.push({icon:'🔍', text:'لديك أخطاء في الأسئلة السهلة. تمهل ولا تتسرع في الإجابة.'});
+            }
+            const hard = detailed.byDifficulty.hard;
+            if(hard && hard.total > 0 && (hard.correct / hard.total) < 0.5) {
+                tips.push({icon:'🔥', text:'الأسئلة الصعبة تحتاج تدريب أكثر. راجع الأمثلة المتقدمة.'});
+            }
+
+            // توصيات الوقت
+            const avgTime = Math.round((data.timeTaken || 0) / (data.total || 1));
+            if(avgTime < 10) {
+                tips.push({icon:'⏱️', text:`متوسط ${avgTime} ثانية/سؤال سريع جداً. خذ وقتك في القراءة.`});
             }
 
             // توصية عامة
-            tips.push({icon:'💡', text:'مراجعة الأخطاء المذكورة أعلاه هي أسرع طريقة للتعلم.'});
-            
-            return tips;
+            if((data.wrong || []).length > 0) {
+                tips.push({icon:'💡', text:'راجع الأخطاء أعلاه - هذه أسرع طريقة للتعلم!'});
+            }
+
+            return tips.length > 0 ? tips : [{icon:'✅', text:'استمر في التدريب والمراجعة!'}];
         }
     </script>
 </body>
