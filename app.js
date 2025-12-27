@@ -1,13 +1,12 @@
 /*
  * =================================================================================
- * APP.JS - Version 22.0.0 (Analytics & Data Tracking Added)
- * تم دمج الإصلاحات: Retry Logic, Timeout, Activity Sync, 404 Handling
- * تم إضافة: Quiz Timer, Detailed Results Storage, Analytics Button
+ * APP.JS - Version 23.0.0 (Ultimate Fixes + Deep Analytics)
+ * تم دمج كافة الإصلاحات: Retry Logic, Timeout, Activity Sync, 404 Handling
+ * تم إضافة: تحليل البيانات حسب الصعوبة والموضوع (Difficulty & Topic)
  * =================================================================================
  */
 
 // 1. الثوابت والإعدادات
-// ✅ التعديل: استخدام رابط Fly.io الذي تم الرفع عليه بنجاح
 const API_URL = 'https://tawal-backend-main.fly.dev/api';
 const STORAGE_KEY_STUDENT_ID = 'tawal_student_id_v2';
 const STORAGE_KEY_USER = 'tawal_user_data_v2';
@@ -66,7 +65,7 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// ✅ تحسين recordActivity لتكون Async وتنتظر الرد لضمان التسجيل
+// تسجيل الأنشطة (Async)
 async function recordActivity(type, name) {
     if (!CURRENT_STUDENT_ID) return;
     try {
@@ -133,7 +132,6 @@ function showError(title, message) {
     else showToast(`${title}: ${message}`, 'error');
 }
 
-// ✅ تحسين تنسيق التاريخ والوقت
 function formatDate(dateString) {
     if (!dateString || dateString === 'null' || dateString === 'undefined') return '-';
     try {
@@ -152,12 +150,11 @@ function formatDate(dateString) {
 // =================================================================
 // 3. الاتصال بالسيرفر (API) مع الـ Retry Logic
 // =================================================================
-// ✅ إضافة خاصية الـ Retries والـ Timeout لضمان استقرار الاتصال
 async function apiRequest(endpoint, opts = {}, retries = 2) {
     for (let attempt = 0; attempt <= retries; attempt++) {
         try {
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني مهلة
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
             const res = await fetch(`${API_URL}${endpoint}`, { 
                 ...opts, 
@@ -222,7 +219,6 @@ async function getFingerprint() {
 document.addEventListener('DOMContentLoaded', async () => {
     initThemeToggle();
     
-    // ✅ تحسين جلب الإحصائيات مع Timeout وبيانات بديلة
     if (document.getElementById('total-students')) {
         const fetchWithTimeout = (url, timeout = 5000) => {
             return Promise.race([
@@ -273,34 +269,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     else if ($('dashboard-content')) initDashboardPage();
 });
 
-// ✅ التحسين الذكي للتحقق ومسح الجلسة (404 Handling)
 async function verifyStudent() {
     if (!CURRENT_STUDENT_ID) return false;
     try { 
         const res = await apiRequest(`/students/${CURRENT_STUDENT_ID}`); 
-        
-        // إذا عاد السيرفر بـ 404 فهذا يعني أن الطالب حُذف من لوحة الإدارة
         if (!res || res.status === 404) {
             console.warn('❌ Student session invalid (404). Resetting...');
             localStorage.clear();
             location.reload();
             return false;
         }
-        
         const s = await res.json(); 
         if (!s || !s.id) {
             localStorage.clear();
             location.reload();
             return false; 
         }
-        
         if (s.isblocked) { 
             localStorage.clear(); 
             showToast('⛔ تم حظر هذا الحساب من قبل الإدارة.', 'error');
             setTimeout(() => location.reload(), 2000);
             return false; 
         } 
-        
         USER_DATA = s; 
         return true; 
     } catch (e) { 
@@ -345,7 +335,7 @@ window.logoutStudent = async () => {
 };
 
 // =================================================================
-// 6. الصفحة الرئيسية (Index Page)
+// 6. الصفحة الرئيسية
 // =================================================================
 function initThemeToggle() { 
     const b = $('theme-toggle-btn'); 
@@ -356,7 +346,6 @@ function initThemeToggle() {
     }; 
 }
 
-// ✅ تحسين animateCounter
 function animateCounter(element, target, duration = 2000) {
     if (!element || target === null || target === undefined) return;
     let start = 0;
@@ -437,7 +426,7 @@ async function initIndexPage() {
 }
 
 // =================================================================
-// 7. لوحة الطالب والرسائل (Dashboard)
+// 7. لوحة الطالب والرسائل
 // =================================================================
 async function initDashboardPage() {
     const c = $('dashboard-content'); 
@@ -503,7 +492,7 @@ async function setupMessaging() {
 }
 
 // =================================================================
-// 8. الملخصات (Summary)
+// 8. الملخصات
 // =================================================================
 async function checkResourceExists(url) {
     try { const r = await fetch(url, { method: 'HEAD' }); return r.ok; } catch { return false; }
@@ -541,7 +530,7 @@ async function initSummaryPage(key) {
 }
 
 // =================================================================
-// 9. صفحة الاختبارات (Quiz Page)
+// 9. صفحة الاختبارات
 // =================================================================
 async function initQuizPage(key) {
     if(!SUBJECTS[key]) return;
@@ -577,7 +566,7 @@ window.loadLevelFile = async (key, idx) => {
 };
 
 // =================================================================
-// 10. محرك الاختبار (Quiz Engine) - مع التعديلات الجديدة
+// 10. محرك الاختبار (Quiz Engine) - مع التحليل الذكي الجديد
 // =================================================================
 function runQuizEngine(questions, title, subjectId) {
     if (!questions || questions.length === 0) return;
@@ -585,7 +574,7 @@ function runQuizEngine(questions, title, subjectId) {
     const shuffled = shuffleArray(questions);
     const body = $('quiz-body'), footer = $('quiz-footer'), nextBtn = $('next-btn');
     
-    // 🔥 التعديل الأول: حفظ وقت بداية الاختبار
+    // 🔥 حفظ وقت بداية الاختبار
     window.quizStartTime = Date.now();
 
     body.style.display = 'block'; footer.style.display = 'block'; nextBtn.style.display = 'block';
@@ -619,11 +608,41 @@ function runQuizEngine(questions, title, subjectId) {
     nextBtn.onclick = () => { if(idx < shuffled.length-1) { idx++; loadQ(); } else { showResults(); } };
     
     async function showResults() {
-        QUIZ_IN_PROGRESS = false; body.style.display = 'none'; footer.style.display = 'none';
-        const resDiv = $('results-container'); resDiv.style.display = 'flex';
+        QUIZ_IN_PROGRESS = false; 
+        body.style.display = 'none'; 
+        footer.style.display = 'none';
+        const resDiv = $('results-container'); 
+        resDiv.style.display = 'flex';
         const percent = Math.round((correct / questions.length) * 100);
 
-        // 🔥 التعديل الثاني: حفظ البيانات لصفحة التحليل
+        // 🔥 بناء تحليل شامل للبيانات
+        const detailedAnalysis = {
+            byDifficulty: { easy: {correct: 0, total: 0}, medium: {correct: 0, total: 0}, hard: {correct: 0, total: 0} },
+            byCategory: {}
+        };
+
+        // تحليل جميع الأسئلة
+        shuffled.forEach((q, index) => {
+            const diff = q.difficulty || 'medium';
+            const topic = q.topic || q.category || 'عام';
+            const isCorrect = !incorrectList.some(w => w.question === q.question);
+
+            // تحليل حسب الصعوبة
+            if (!detailedAnalysis.byDifficulty[diff]) {
+                detailedAnalysis.byDifficulty[diff] = {correct: 0, total: 0};
+            }
+            detailedAnalysis.byDifficulty[diff].total++;
+            if (isCorrect) detailedAnalysis.byDifficulty[diff].correct++;
+
+            // تحليل حسب الموضوع
+            if (!detailedAnalysis.byCategory[topic]) {
+                detailedAnalysis.byCategory[topic] = {correct: 0, total: 0};
+            }
+            detailedAnalysis.byCategory[topic].total++;
+            if (isCorrect) detailedAnalysis.byCategory[topic].correct++;
+        });
+
+        // 🔥 حفظ البيانات الكاملة
         const resultData = {
             score: percent,
             correct: correct,
@@ -632,19 +651,34 @@ function runQuizEngine(questions, title, subjectId) {
                 question: q.question,
                 correctAnswer: q.type === 'tf' 
                     ? (String(q.answer).toLowerCase() === 'true' ? 'صح' : 'خطأ')
-                    : q.options[q.answer]
+                    : q.options[q.answer],
+                difficulty: q.difficulty || 'medium',
+                category: q.topic || q.category || 'عام'
             })),
             quizName: title,
             subject: getSubjectKey(),
-            timeTaken: Math.round((Date.now() - window.quizStartTime) / 1000)
+            timeTaken: Math.round((Date.now() - window.quizStartTime) / 1000),
+            detailedAnalysis: detailedAnalysis // ✅ إضافة التحليل الشامل
         };
+        
         localStorage.setItem('quiz_result_data', JSON.stringify(resultData));
 
+        // حفظ النتيجة على السيرفر
         if (!title.includes('مراجعة')) {
-            await apiRequest('/quiz-results', { method: 'POST', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID, quizName: title, score: percent, totalQuestions: questions.length, correctAnswers: correct, subjectId: subjectId || getSubjectKey() }) });
+            await apiRequest('/quiz-results', { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    studentId: CURRENT_STUDENT_ID, 
+                    quizName: title, 
+                    score: percent, 
+                    totalQuestions: questions.length, 
+                    correctAnswers: correct, 
+                    subjectId: subjectId || getSubjectKey() 
+                }) 
+            });
         }
 
-        // 🔥 التعديل الثالث: إضافة زر التحليل الشامل في الواجهة
+        // واجهة النتائج
         resDiv.innerHTML = `
             <h2>النتيجة: ${percent}%</h2>
             
