@@ -3,354 +3,398 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تحليل الأداء الشامل | Tawal Academy</title>
+    <title>تحليل الأداء التفصيلي | Tawal Academy</title>
     
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#667eea">
-    <link rel="icon" href="icon-192x192.png" type="image/png">
-    <link rel="stylesheet" href="style.css?v=23.0.0">
+    <link rel="stylesheet" href="style.css?v=24.0.0">
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
     
     <style>
-        .analytics-container {
-            max-width: 900px;
-            margin: 2rem auto;
-            padding: 0 1rem;
+        /* تعريف المتغيرات الخاصة بالتحليل */
+        :root {
+            --glass-bg: rgba(255, 255, 255, 0.95);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.2);
+            --easy-color: #2ecc71;
+            --medium-color: #f1c40f;
+            --hard-color: #e74c3c;
+        }
+        body.dark-mode {
+            --glass-bg: rgba(30, 30, 40, 0.95);
+            --glass-border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
+        .analytics-container {
+            max-width: 1100px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+            animation: fadeIn 0.6s ease;
+        }
+
+        /* كروت العرض */
         .analytics-card {
             background: var(--bg-secondary-color);
             border-radius: 20px;
             padding: 2rem;
             margin-bottom: 2rem;
-            box-shadow: var(--shadow-lg);
             border: 1px solid var(--border-color);
-            animation: fadeInUp 0.5s ease;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
         }
 
-        .score-display {
+        /* الهيدر الخاص بالنتيجة */
+        .result-header {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 2rem;
+            align-items: center;
+        }
+        @media (min-width: 768px) {
+            .result-header { grid-template-columns: 300px 1fr; }
+        }
+
+        /* الدائرة التفاعلية للدرجة */
+        .circular-chart {
+            display: block;
+            margin: 0 auto;
+            max-width: 200px;
+            max-height: 250px;
+        }
+        .circle-bg { fill: none; stroke: var(--border-color); stroke-width: 2.5; }
+        .circle { 
+            fill: none; 
+            stroke-width: 2.5; 
+            stroke-linecap: round; 
+            animation: progress 1.5s ease-out forwards;
+        }
+        .percentage { 
+            fill: var(--text-color); 
+            font-family: 'Cairo', sans-serif; 
+            font-weight: bold; 
+            font-size: 0.5em; 
+            text-anchor: middle; 
+        }
+        @keyframes progress { 0% { stroke-dasharray: 0 100; } }
+
+        /* تفاصيل النتيجة */
+        .score-details h2 { margin-bottom: 0.5rem; font-size: 2rem; }
+        .score-tag {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 50px;
+            font-size: 0.9rem;
+            background: rgba(102, 126, 234, 0.1);
+            color: var(--primary-color);
+            border: 1px solid var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        /* شبكة الإحصائيات المصغرة */
+        .mini-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 1rem;
+            margin-top: 1.5rem;
+        }
+        .mini-stat-box {
+            background: var(--bg-color);
+            padding: 1rem;
+            border-radius: 12px;
             text-align: center;
-            padding: 2rem;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
-            border-radius: 15px;
+            border: 1px solid var(--border-color);
+        }
+
+        /* قسم تحليل الصعوبة والمواضيع */
+        .deep-analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 2rem;
             margin-bottom: 2rem;
         }
 
-        .score-circle {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background: conic-gradient(
-                var(--primary-color) calc(var(--score) * 3.6deg),
-                var(--bg-color) 0deg
-            );
-            padding: 5px;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            margin-bottom: 1rem;
+        .progress-container { margin-bottom: 1.2rem; }
+        .progress-label {
+            display: flex; justify-content: space-between; margin-bottom: 0.5rem; font-size: 0.9rem;
         }
-
-        .score-circle-inner {
-            width: 100%;
-            height: 100%;
-            background: var(--bg-secondary-color);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 2.5rem;
-            font-weight: bold;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+        .progress-bar-bg {
+            width: 100%; height: 8px; background: var(--bg-color); border-radius: 10px; overflow: hidden;
         }
+        .progress-bar-fill { height: 100%; border-radius: 10px; transition: width 1s ease; }
 
-        .stats-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0;
+        /* بادجات المواضيع */
+        .topic-badges {
+            display: flex; flex-wrap: wrap; gap: 10px;
         }
-
-        .stat-box {
-            text-align: center;
-            padding: 1.5rem;
-            background: var(--bg-color);
+        .topic-badge {
+            flex: 1 1 auto;
+            padding: 0.8rem 1rem;
             border-radius: 12px;
+            text-align: center;
+            border: 1px solid transparent;
+            background: var(--bg-color);
+            transition: transform 0.2s;
+        }
+        .topic-badge:hover { transform: translateY(-3px); }
+
+        /* كروت الأخطاء */
+        .mistake-card {
+            background: var(--bg-secondary-color);
+            border-right: 4px solid var(--color-incorrect);
+            border-radius: 12px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
             border: 1px solid var(--border-color);
         }
-
-        .stat-value {
-            font-size: 2rem;
-            font-weight: bold;
-            color: var(--primary-color);
-            margin-bottom: 0.5rem;
+        .mistake-meta {
+            display: flex; gap: 10px; margin-bottom: 10px; font-size: 0.8rem;
+        }
+        .meta-tag {
+            padding: 2px 8px; border-radius: 4px; background: var(--bg-color); border: 1px solid var(--border-color);
         }
 
-        .stat-label {
-            font-size: 0.9rem;
-            color: var(--text-color-light);
-        }
-
-        .wrong-answers {
-            margin-top: 2rem;
-        }
-
-        .wrong-item {
-            background: var(--bg-color);
-            border: 1px solid var(--color-incorrect);
-            border-radius: 12px;
-            padding: 1.5rem;
+        /* التوصيات */
+        .rec-item {
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            border: 1px solid var(--primary-color);
+            padding: 1rem;
+            border-radius: 10px;
+            display: flex; align-items: center; gap: 1rem;
             margin-bottom: 1rem;
         }
 
-        .wrong-question {
-            font-weight: 600;
-            margin-bottom: 1rem;
-            color: var(--text-color);
-        }
-
-        .correct-answer {
-            background: var(--color-correct-bg);
-            border: 1px solid var(--color-correct);
-            border-radius: 8px;
-            padding: 1rem;
-            color: var(--color-correct);
-            font-weight: 600;
-        }
-
-        .recommendations {
-            background: linear-gradient(135deg, rgba(46, 204, 113, 0.1), rgba(52, 152, 219, 0.1));
-            border: 2px solid var(--success-gradient);
-            border-radius: 15px;
-            padding: 2rem;
-        }
-
-        .recommendation-item {
-            padding: 1rem;
-            margin: 0.5rem 0;
-            background: var(--bg-secondary-color);
-            border-radius: 8px;
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .recommendation-icon {
-            font-size: 2rem;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-color-light);
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            flex-wrap: wrap;
-            margin-top: 2rem;
+        /* أزرار التحكم */
+        .action-bar {
+            display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; margin-top: 3rem;
         }
     </style>
 </head>
 <body>
     <div class="main-container">
         <header class="main-header">
-            <h1 class="logo">Tawal Academy</h1>
+            <h1 class="logo">
+                <svg xmlns="http://www.w3.org/2000/svg" width="30" height="30" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="4"><path d="M40 8H8c-2.21 0-4 1.79-4 4v24c0 2.21 1.79 4 4 4h32c2.21 0 4-1.79 4-4V12c0-2.21-1.79-4-4-4z" fill="currentColor"/><path d="M18 20l6 12 6-12" stroke="white" stroke-width="2"/><line x1="16" y1="20" x2="32" y2="20" stroke="white" stroke-width="2"/></svg>
+                Tawal Academy
+            </h1>
             <div class="header-controls">
-                <a href="index.html" class="dashboard-link" title="الرئيسية">🏠</a>
-                <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="تبديل الوضع">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-sun"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
-                </button>
+                <a href="index.html" class="dashboard-link">🏠</a>
+                <button id="theme-toggle-btn" class="theme-toggle-btn">🌗</button>
             </div>
         </header>
 
-        <main class="analytics-container" id="analytics-container">
-            <div class="empty-state" id="loading">
+        <main class="analytics-container" id="report-container">
+            <div style="text-align: center; padding: 4rem;">
                 <div class="spinner"></div>
-                <p style="margin-top: 1rem;">جاري تحليل أدائك...</p>
+                <p>جاري تحليل البيانات...</p>
             </div>
         </main>
     </div>
 
     <script>
-        // Theme Toggle
+        // 1. إعدادات الثيم
         const themeBtn = document.getElementById('theme-toggle-btn');
-        if (localStorage.getItem('theme') === 'light') {
-            document.body.classList.add('light-mode');
-        }
-        if (themeBtn) {
-            themeBtn.onclick = () => {
-                document.body.classList.toggle('light-mode');
-                localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-            };
-        }
+        if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
+        themeBtn.onclick = () => {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        };
 
-        // Load and Display Analytics
-        function loadAnalytics() {
-            const container = document.getElementById('analytics-container');
-            const data = localStorage.getItem('quiz_result_data');
+        // 2. تشغيل التقرير
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(generateReport, 500);
+        });
 
-            if (!data) {
+        function generateReport() {
+            const container = document.getElementById('report-container');
+            const rawData = localStorage.getItem('quiz_result_data');
+
+            // التحقق من وجود بيانات
+            if (!rawData) {
                 container.innerHTML = `
-                    <div class="empty-state">
-                        <div style="font-size: 4rem; margin-bottom: 1rem;">📭</div>
-                        <h3>لا توجد بيانات للتحليل</h3>
-                        <p>يجب عليك إجراء اختبار أولاً للحصول على التحليل الشامل</p>
-                        <div class="action-buttons">
-                            <a href="index.html" class="card-btn btn-quiz">🏠 العودة للرئيسية</a>
-                        </div>
-                    </div>
-                `;
+                    <div class="analytics-card" style="text-align:center">
+                        <div style="font-size:4rem">📊</div>
+                        <h2>لا توجد بيانات متاحة</h2>
+                        <p>قم بإجراء اختبار أولاً ليظهر التحليل هنا.</p>
+                        <a href="index.html" class="card-btn btn-quiz">الذهاب للاختبارات</a>
+                    </div>`;
                 return;
             }
 
-            const result = JSON.parse(data);
-            const { score, correct, total, wrong, quizName, subject, timeTaken } = result;
+            const data = JSON.parse(rawData);
+            
+            // استخراج البيانات الأساسية
+            const score = data.score;
+            const detailed = data.detailedAnalysis || { byDifficulty: {}, byCategory: {} }; // الاعتماد على البيانات القادمة من app.js
 
-            // Determine emoji and message
-            let emoji = '🎉', message = 'ممتاز! أداء رائع', color = 'var(--color-correct)';
-            if (score >= 90) {
-                emoji = '🏆'; message = 'ممتاز جداً! أنت نجم';
-            } else if (score >= 75) {
-                emoji = '✨'; message = 'جيد جداً! استمر';
-            } else if (score >= 50) {
-                emoji = '💪'; message = 'جيد، يمكنك التحسن';
-            } else {
-                emoji = '📚'; message = 'حاول مرة أخرى';
-                color = 'var(--color-incorrect)';
-            }
+            // تحديد لون الرسم البياني
+            let strokeColor = score >= 90 ? '#2ecc71' : score >= 75 ? '#3498db' : score >= 50 ? '#f1c40f' : '#e74c3c';
+            let message = score >= 90 ? 'أداء أسطوري!' : score >= 75 ? 'ممتاز جداً' : score >= 50 ? 'جيد، استمر' : 'تحتاج لمزيد من التركيز';
 
-            // Format time
-            const minutes = Math.floor(timeTaken / 60);
-            const seconds = timeTaken % 60;
-            const timeText = minutes > 0 ? `${minutes} دقيقة و ${seconds} ثانية` : `${seconds} ثانية`;
-
-            // Generate recommendations
-            const recommendations = generateRecommendations(score, wrong.length, timeTaken);
-
-            container.innerHTML = `
-                <div class="analytics-card">
-                    <div class="score-display">
-                        <div style="font-size: 3rem; margin-bottom: 0.5rem;">${emoji}</div>
-                        <h2 style="color: ${color}; margin-bottom: 0.5rem;">${message}</h2>
-                        <div class="score-circle" style="--score: ${score}">
-                            <div class="score-circle-inner">${score}%</div>
-                        </div>
-                        <h3 style="margin-top: 1rem; color: var(--text-color);">${quizName}</h3>
+            // بناء واجهة التقرير
+            let html = `
+                <div class="analytics-card result-header">
+                    <div style="text-align:center;">
+                        <svg viewBox="0 0 36 36" class="circular-chart">
+                            <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <path class="circle" stroke-dasharray="${score}, 100" stroke="${strokeColor}" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                            <text x="18" y="20.35" class="percentage">${score}%</text>
+                        </svg>
                     </div>
-
-                    <div class="stats-grid">
-                        <div class="stat-box">
-                            <div class="stat-value">${total}</div>
-                            <div class="stat-label">إجمالي الأسئلة</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value" style="color: var(--color-correct);">${correct}</div>
-                            <div class="stat-label">إجابات صحيحة</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value" style="color: var(--color-incorrect);">${wrong.length}</div>
-                            <div class="stat-label">إجابات خاطئة</div>
-                        </div>
-                        <div class="stat-box">
-                            <div class="stat-value" style="color: var(--primary-color);">⏱️ ${timeText}</div>
-                            <div class="stat-label">الوقت المستغرق</div>
+                    <div class="score-details">
+                        <span class="score-tag">${data.quizName}</span>
+                        <h2 style="color:${strokeColor}">${message}</h2>
+                        <p style="color:var(--text-color-light)">تم الانتهاء في ${formatTime(data.timeTaken)}</p>
+                        
+                        <div class="mini-stats">
+                            <div class="mini-stat-box">
+                                <div style="font-weight:bold; font-size:1.2rem;">${data.total}</div>
+                                <div style="font-size:0.8rem; opacity:0.7">الأسئلة</div>
+                            </div>
+                            <div class="mini-stat-box" style="border-color:var(--color-correct)">
+                                <div style="font-weight:bold; font-size:1.2rem; color:var(--color-correct)">${data.correct}</div>
+                                <div style="font-size:0.8rem; opacity:0.7">صحيحة</div>
+                            </div>
+                            <div class="mini-stat-box" style="border-color:var(--color-incorrect)">
+                                <div style="font-weight:bold; font-size:1.2rem; color:var(--color-incorrect)">${data.wrong.length}</div>
+                                <div style="font-size:0.8rem; opacity:0.7">خاطئة</div>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                ${wrong.length > 0 ? `
+                <div class="deep-analysis-grid">
+                    
                     <div class="analytics-card">
-                        <h3 style="margin-bottom: 1.5rem; color: var(--color-incorrect);">❌ الأخطاء التي وقعت فيها</h3>
-                        <div class="wrong-answers">
-                            ${wrong.map((item, index) => `
-                                <div class="wrong-item">
-                                    <div class="wrong-question">
-                                        <strong>${index + 1}.</strong> ${item.question}
-                                    </div>
-                                    <div class="correct-answer">
-                                        ✅ الإجابة الصحيحة: ${item.correctAnswer}
-                                    </div>
-                                </div>
-                            `).join('')}
+                        <h3 style="margin-bottom:1.5rem; display:flex; align-items:center; gap:10px;">
+                            <span>🧠</span> تحليل مستوى الصعوبة
+                        </h3>
+                        ${renderDifficultyBar('سهل (Easy)', detailed.byDifficulty.easy, 'var(--easy-color)')}
+                        ${renderDifficultyBar('متوسط (Medium)', detailed.byDifficulty.medium, 'var(--medium-color)')}
+                        ${renderDifficultyBar('صعب (Hard)', detailed.byDifficulty.hard, 'var(--hard-color)')}
+                        ${Object.keys(detailed.byDifficulty).length === 0 ? '<p style="text-align:center; color:#777">لا توجد بيانات صعوبة</p>' : ''}
+                    </div>
+
+                    <div class="analytics-card">
+                        <h3 style="margin-bottom:1.5rem; display:flex; align-items:center; gap:10px;">
+                            <span>📚</span> إتقان فصول المادة (Topics)
+                        </h3>
+                        <div class="topic-badges">
+                            ${renderTopicBadges(detailed.byCategory)}
                         </div>
                     </div>
-                ` : ''}
+                </div>
 
-                <div class="analytics-card recommendations">
-                    <h3 style="margin-bottom: 1.5rem; color: var(--color-correct);">🎯 توصيات لتحسين الأداء</h3>
-                    ${recommendations.map(rec => `
-                        <div class="recommendation-item">
-                            <span class="recommendation-icon">${rec.icon}</span>
-                            <div>${rec.text}</div>
+                <div class="analytics-card">
+                    <h3 style="margin-bottom:1.5rem; color:var(--color-incorrect)">❌ مراجعة الأخطاء</h3>
+                    ${data.wrong.length === 0 
+                        ? `<div style="text-align:center; padding:2rem;">
+                            <div style="font-size:3rem;">🎉</div>
+                            <p>أحسنت! لا توجد أي أخطاء.</p>
+                           </div>` 
+                        : data.wrong.map((w, i) => `
+                            <div class="mistake-card">
+                                <div class="mistake-meta">
+                                    <span class="meta-tag" style="background:var(--bg-color)">📂 ${w.category || w.topic || 'عام'}</span>
+                                    <span class="meta-tag" style="border-color:${getDiffColor(w.difficulty)}">
+                                        ${w.difficulty === 'hard' ? '🔥 صعب' : w.difficulty === 'easy' ? '🟢 سهل' : '⚖️ متوسط'}
+                                    </span>
+                                </div>
+                                <p style="font-weight:bold; margin-bottom:0.8rem; font-size:1.1rem;">${i+1}. ${w.question}</p>
+                                <div style="display:flex; flex-direction:column; gap:0.5rem;">
+                                    <div style="font-size:0.9rem; color:var(--color-incorrect); text-decoration:line-through;">إجابتك: خطأ</div>
+                                    <div style="background:rgba(46, 204, 113, 0.1); padding:0.8rem; border-radius:8px; border:1px solid var(--color-correct); color:var(--color-correct); font-weight:bold;">
+                                        ✅ الإجابة الصحيحة: ${w.correctAnswer}
+                                    </div>
+                                </div>
+                            </div>
+                        `).join('')
+                    }
+                </div>
+
+                <div class="analytics-card">
+                    <h3 style="margin-bottom:1.5rem;">💡 توصيات الذكاء الاصطناعي</h3>
+                    ${generateRecommendations(score, detailed).map(rec => `
+                        <div class="rec-item">
+                            <span style="font-size:1.5rem">${rec.icon}</span>
+                            <span>${rec.text}</span>
                         </div>
                     `).join('')}
                 </div>
 
-                <div class="action-buttons">
-                    <a href="quiz.html?subject=${subject}" class="card-btn btn-quiz">🔄 إعادة الاختبار</a>
-                    <a href="quiz.html?subject=${subject}" class="card-btn btn-summary">📂 المستويات الأخرى</a>
-                    <a href="index.html" class="card-btn" style="background: var(--bg-color); border: 1px solid var(--border-color);">🏠 الرئيسية</a>
+                <div class="action-bar">
+                    <a href="quiz.html?subject=${data.subject}" class="card-btn btn-quiz">🔄 إعادة الاختبار</a>
+                    <a href="summary.html?subject=${data.subject}" class="card-btn btn-summary">📖 المذاكرة</a>
+                    <a href="index.html" class="card-btn" style="background:transparent; border:1px solid var(--text-color)">🏠 الرئيسية</a>
+                </div>
+            `;
+
+            container.innerHTML = html;
+        }
+
+        // --- دوال مساعدة ---
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = seconds % 60;
+            return m > 0 ? `${m} دقيقة و ${s} ثانية` : `${s} ثانية`;
+        }
+
+        function getDiffColor(diff) {
+            if(diff === 'easy') return 'var(--easy-color)';
+            if(diff === 'hard') return 'var(--hard-color)';
+            return 'var(--medium-color)';
+        }
+
+        function renderDifficultyBar(label, stats, color) {
+            if(!stats || stats.total === 0) return '';
+            const pct = Math.round((stats.correct / stats.total) * 100);
+            return `
+                <div class="progress-container">
+                    <div class="progress-label">
+                        <span>${label}</span>
+                        <span>${stats.correct}/${stats.total} (${pct}%)</span>
+                    </div>
+                    <div class="progress-bar-bg">
+                        <div class="progress-bar-fill" style="width:${pct}%; background:${color}"></div>
+                    </div>
                 </div>
             `;
         }
 
-        function generateRecommendations(score, wrongCount, time) {
-            const recommendations = [];
-
-            if (score >= 90) {
-                recommendations.push({
-                    icon: '🌟',
-                    text: 'أداء ممتاز! حافظ على هذا المستوى وجرب مستويات أصعب'
-                });
-            } else if (score >= 75) {
-                recommendations.push({
-                    icon: '📖',
-                    text: 'راجع الأسئلة الخاطئة بعناية لتحسين أدائك'
-                });
-            } else if (score >= 50) {
-                recommendations.push({
-                    icon: '📚',
-                    text: 'ينصح بمراجعة الملخصات قبل إعادة الاختبار'
-                });
-            } else {
-                recommendations.push({
-                    icon: '🎓',
-                    text: 'خصص وقتاً أطول لدراسة المادة قبل المحاولة التالية'
-                });
-            }
-
-            if (wrongCount > 5) {
-                recommendations.push({
-                    icon: '✍️',
-                    text: 'ركز على الموضوعات التي أخطأت فيها أكثر'
-                });
-            }
-
-            if (time < 60) {
-                recommendations.push({
-                    icon: '⏳',
-                    text: 'خذ وقتك في قراءة الأسئلة بعناية قبل الإجابة'
-                });
-            }
-
-            recommendations.push({
-                icon: '💡',
-                text: 'استخدم الملخصات المتاحة لتعزيز فهمك للمادة'
-            });
-
-            return recommendations;
+        function renderTopicBadges(categories) {
+            if(!categories || Object.keys(categories).length === 0) return '<p style="color:#777">التحليل حسب الموضوع غير متوفر</p>';
+            return Object.entries(categories).map(([cat, stats]) => {
+                const pct = Math.round((stats.correct / stats.total) * 100);
+                let color = pct >= 80 ? 'var(--easy-color)' : pct >= 50 ? 'var(--medium-color)' : 'var(--hard-color)';
+                let bg = pct >= 80 ? 'rgba(46, 204, 113, 0.1)' : pct >= 50 ? 'rgba(241, 196, 15, 0.1)' : 'rgba(231, 76, 60, 0.1)';
+                return `
+                    <div class="topic-badge" style="background:${bg}; border-color:${color}; color:${color}">
+                        <div style="font-size:0.85rem; opacity:0.9">${cat}</div>
+                        <div style="font-weight:bold; font-size:1.1rem;">${pct}%</div>
+                    </div>
+                `;
+            }).join('');
         }
 
-        // Load on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            setTimeout(loadAnalytics, 500);
-        });
+        function generateRecommendations(score, detailed) {
+            let tips = [];
+            
+            // توصيات بناءً على الدرجة
+            if(score === 100) tips.push({icon:'👑', text:'مستواك مثالي! أنت جاهز تماماً للامتحان.'});
+            else if(score < 60) tips.push({icon:'📖', text:'ينصح بمراجعة الملخصات الشاملة قبل المحاولة مرة أخرى.'});
+
+            // توصيات بناءً على الصعوبة
+            if(detailed.byDifficulty.easy && detailed.byDifficulty.easy.correct < detailed.byDifficulty.easy.total) {
+                tips.push({icon:'⚠️', text:'لديك أخطاء في الأسئلة السهلة، ركز ولا تتسرع.'});
+            }
+            if(detailed.byDifficulty.hard && detailed.byDifficulty.hard.correct < (detailed.byDifficulty.hard.total / 2)) {
+                tips.push({icon:'🔥', text:'تحتاج للتدرب أكثر على الأسئلة ذات المستوى المتقدم (Hard).'});
+            }
+
+            // توصية عامة
+            tips.push({icon:'💡', text:'مراجعة الأخطاء المذكورة أعلاه هي أسرع طريقة للتعلم.'});
+            
+            return tips;
+        }
     </script>
 </body>
 </html>
