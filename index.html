@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tawal Academy | الرئيسية</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@fingerprintjs/fingerprintjs@3/dist/fp.min.js"></script>
+    
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#667eea"> <link rel="icon" href="icon-192x192.png" type="image/png">
+
+    <link rel="stylesheet" href="style.css?v=20.0.0"> 
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="main-container">
+        <header class="main-header">
+            <h1 class="logo">Tawal Academy</h1> 
+            
+            <div class="header-controls">
+                <a href="dashboard.html" class="dashboard-link" title="عرض التقدم">📊</a>
+                
+                <button onclick="window.logoutStudent()" class="dashboard-link" style="background:var(--color-incorrect); margin-left: 5px;" title="تسجيل الخروج">🚪</button>
+
+                <button id="theme-toggle-btn" class="theme-toggle-btn" aria-label="تبديل الوضع">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-sun"><circle cx="12" cy="12" r="5"></circle><line x1="12" y1="1" x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line><line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line></svg>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="icon-moon"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+                </button>
+            </div>
+        </header>
+
+        <main>
+            <div class="breadcrumbs" style="padding: 10px 20px; font-size: 0.9rem; color: var(--text-secondary);">
+                 <a href="index.html" style="text-decoration: none; color: inherit;">🏠 الرئيسية</a>
+            </div>
+
+            <section class="hero-section">
+                <div class="hero-content">
+                    <div class="hero-badge">🎓 منصة تعليمية متكاملة</div>
+                    <h1 class="hero-title">مرحباً بك في <span class="gradient-text">Tawal Academy</span></h1>
+                    <p class="hero-description">رحلتك التعليمية في الجغرافيا تبدأ هنا. اختبارات ذكية، ملخصات شاملة، وتتبع دقيق لتقدمك.</p>
+                    
+                    <div class="hero-stats">
+                        <div class="stat-item">
+                            <span class="stat-number" id="total-students">0</span>
+                            <span class="stat-label">طالب متميز</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number" id="total-quizzes">0</span>
+                            <span class="stat-label">اختبار مكتمل</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-number">7</span> <span class="stat-label">مادة دراسية</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="hero-decoration">
+                    <div class="floating-icon">📚</div>
+                    <div class="floating-icon">🌍</div>
+                    <div class="floating-icon">🎯</div>
+                </div>
+            </section>
+
+            <div class="search-container">
+                <input type="text" id="search-bar" placeholder="🔍 ابحث عن اسم المادة..." autocomplete="off">
+                
+                <div id="no-results-message" class="empty-state" style="display: none; text-align: center; padding: 2rem;">
+                    <div class="empty-icon" style="font-size: 3rem; margin-bottom: 1rem;">📭</div>
+                    <h3>لا توجد مواد تطابق بحثك</h3>
+                    <p>جرب البحث بكلمات مختلفة أو تصفح المواد بالأسفل</p>
+                </div>
+            </div>
+            
+            <div class="results-divider"></div>
+
+            <section class="subjects-grid" id="subjects-grid">
+                <div id="loading-skeleton" style="display: contents;">
+                    <div class="skeleton-card" style="height: 250px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 15px;"></div>
+                    <div class="skeleton-card" style="height: 250px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 15px;"></div>
+                    <div class="skeleton-card" style="height: 250px; background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%); background-size: 200% 100%; animation: shimmer 1.5s infinite; border-radius: 15px;"></div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <script src="app.js?v=21.0.0"></script>
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('✅ Service Worker Registered:', reg.scope))
+                .catch(err => console.log('❌ SW Registration Failed:', err));
+        }
+    </script>
+    
+    <style>
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</body>
+</html>

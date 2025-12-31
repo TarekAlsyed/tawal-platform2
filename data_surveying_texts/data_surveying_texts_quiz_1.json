@@ -1,0 +1,27 @@
+{
+  "title": "نصوص جغرافية - نموذج تجريبي",
+  "questions": [
+    {
+      "type": "tf",
+      "question": "Surveying is the science of determining the relative positions of points on the Earth's surface.",
+      "answer": true,
+      "difficulty": "easy",
+      "topic": "Definitions"
+    },
+    {
+      "type": "mc",
+      "question": "The ratio between distance on the map and the corresponding distance on the ground is called:",
+      "options": ["Map Legend", "Map Scale", "Map Projection", "Map Key"],
+      "answer": 1,
+      "difficulty": "easy",
+      "topic": "Map Basics"
+    },
+    {
+      "type": "tf",
+      "question": "A 'Topographic Map' shows only political boundaries like countries and cities.",
+      "answer": false,
+      "difficulty": "easy",
+      "topic": "Types of Maps"
+    }
+  ]
+}
