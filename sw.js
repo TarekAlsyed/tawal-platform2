@@ -77,6 +77,11 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const requestUrl = new URL(event.request.url);
 
+    // ✅ استثناء طلبات API من الكاش نهائياً (Network Only)
+    if (requestUrl.pathname.includes('/api/')) {
+        return; 
+    }
+
     // أ. استراتيجية الخطوط (Cache First)
     // نبحث في الكاش أولاً، إذا لم نجد نحمل من النت ونخزن
     if (requestUrl.href === FONT_URL) {
