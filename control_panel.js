@@ -175,16 +175,16 @@ function initializeDashboard() {
 }
 
 function addLogoutButton() {
-    const logoutLinks = document.querySelectorAll('a[href="index.html"]'); 
-    logoutLinks.forEach(link => {
-        link.onclick = (e) => {
+    const logoutBtn = document.getElementById('logout-btn');
+    if (logoutBtn) {
+        logoutBtn.onclick = (e) => {
             e.preventDefault();
             if(confirm('هل تريد تسجيل الخروج؟')) {
                 localStorage.removeItem('admin_token');
-                location.reload();
+                window.location.href = 'index.html';
             }
         };
-    });
+    }
 }
 
 async function loadAllData() {
@@ -325,6 +325,12 @@ async function fetchActivityLogs() {
     if (!res) return;
     const activities = await res.json();
     
+    // ✅ المشكلة 8: عرض رسالة عند عدم وجود بيانات
+    if (!activities || activities.length === 0) {
+        container.innerHTML = '<div class="placeholder" style="text-align:center; padding:2rem; color:var(--text-secondary);">📭 لا توجد سجلات أنشطة حديثة</div>';
+        return;
+    }
+
     let html = `
         <div class="admin-table-container">
             <table class="admin-table">
@@ -334,16 +340,26 @@ async function fetchActivityLogs() {
                 <tbody>`;
                 
     activities.forEach(a => {
-        // ✅ حل مشكلة الـ undefined بفحص كلا المسميين (Case-sensitive check)
-        const type = a.activityType || a.activitytype;
+        // ✅ حل مشكلة الـ undefined بفحص كلا المسميين (Case-sensitive check) & Normalization
+        let rawType = a.activityType || a.activitytype || '';
+        if (typeof rawType === 'string') rawType = rawType.toLowerCase();
+
         const subject = a.subjectName || a.subjectname || '-';
         const student = a.studentName || a.studentname || 'غير معروف';
         const date = a.date || a.timestamp || a.createdat;
         
+        // تحسين عرض اسم النشاط
+        let displayType = ACTIVITY_MAP[rawType] || rawType || 'نشاط غير معروف';
+        
+        // إذا كان النوع بالإنجليزية ولم يوجد في الخريطة، حاول تحسين عرضه
+        if (displayType === rawType && /^[a-z_]+$/i.test(rawType)) {
+            displayType = rawType.replace(/_/g, ' ');
+        }
+
         html += `
             <tr>
                 <td style="font-weight:600;">${student}</td>
-                <td>${ACTIVITY_MAP[type] || type || 'نشاط غير معروف'}</td>
+                <td>${displayType}</td>
                 <td>${subject}</td>
                 <td style="color:#9ca3af;">${formatDate(date)}</td>
             </tr>`;

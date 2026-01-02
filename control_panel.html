@@ -399,6 +399,7 @@
     </style>
 </head>
 <body>
+    <div class="sidebar-overlay"></div>
 
     <div class="app-container">
         
@@ -434,9 +435,9 @@
                     <span>سجلات النشاط</span>
                 </a>
                 <div style="height: 1px; background: var(--border-color); margin: 10px 0;"></div>
-                <a href="index.html" class="nav-item" style="color: var(--danger);">
+                <a href="#" id="logout-btn" class="nav-item" style="color: var(--danger);">
                     <i data-lucide="log-out"></i>
-                    <span>العودة للرئيسية</span>
+                    <span>تسجيل الخروج</span>
                 </a>
             </nav>
         </aside>
@@ -533,14 +534,7 @@
                             </div>
                         </div>
 
-                        <div class="admin-card">
-                            <div class="card-header">
-                                <h3><i data-lucide="shield"></i> سجلات الدخول</h3>
-                            </div>
-                            <div class="card-body" id="logs-container">
-                                <div class="spinner">جاري التحميل...</div>
-                            </div>
-                        </div>
+
 
                     </div>
                 </div> </div> </main>
@@ -574,14 +568,6 @@
     <script>
         // تفعيل الأيقونات
         lucide.createIcons();
-
-        // Responsive Sidebar Toggle (سيتم تحسينه في المراحل القادمة)
-        const mobileBtn = document.getElementById('mobile-menu-btn');
-        if(mobileBtn) {
-            mobileBtn.addEventListener('click', () => {
-                document.querySelector('.sidebar').classList.toggle('active');
-            });
-        }
     </script>
 
     <script src="control_panel.js?v=21.0.0"></script>

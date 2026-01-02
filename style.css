@@ -1097,120 +1097,132 @@ input:checked + .slider:before { transform: translateX(14px); }
 .btn-red { background: rgba(239, 68, 68, 0.1); color: var(--danger); }
 .btn-red:hover { background: var(--danger); color: white; }
 
-/* Responsive Adjustments for Admin */
-@media (max-width: 1024px) {
-    .dashboard-grid { grid-template-columns: 1fr; }
-}
-@media (max-width: 768px) {
-    .sidebar { transform: translateX(100%); width: 280px; }
-    .sidebar.active { transform: translateX(0); }
-    .main-content { margin-right: 0; width: 100%; }
-    .top-navbar { padding: 0 15px; }
-    .search-bar { display: none; }
-    #mobile-menu-btn { display: flex !important; }
-}
-
 /* =================================================================
-   PART D: NEW UI ENHANCEMENTS (ADDED v21.1.0)
+   PART D: RESPONSIVE DESIGN & MOBILE OPTIMIZATION
    ================================================================= */
 
-/* 1. Toast Notifications */
-.toast {
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    padding: 15px 20px;
-    background: var(--primary-gradient);
-    color: white;
-    border-radius: 10px;
-    box-shadow: var(--shadow-lg);
-    animation: slideInLeft 0.3s ease forwards;
-    z-index: 10000;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 10px;
+@media (max-width: 768px) {
+    /* 1. General Adjustments */
+    :root {
+        --sidebar-width: 0px; /* Hide sidebar by default */
+        --header-height: 60px;
+    }
+
+    .main-container {
+        width: 100%;
+        padding: 10px;
+    }
+
+    /* 2. Admin Panel Responsive Layout */
+    .sidebar {
+        transform: translateX(100%); /* Slide out to right */
+        width: 260px; /* Restore width when shown */
+        box-shadow: -5px 0 15px rgba(0,0,0,0.1);
+    }
+
+    .sidebar.open {
+        transform: translateX(0);
+    }
+
+    .main-content {
+        margin-right: 0;
+        width: 100%;
+    }
+
+    .dashboard-grid {
+        grid-template-columns: 1fr; /* Stack vertically */
+    }
+
+    .stats-section {
+        grid-template-columns: 1fr 1fr; /* 2 cols on mobile */
+    }
+
+    .search-bar {
+        width: 150px; /* Smaller search bar */
+    }
+
+    .top-navbar {
+        padding: 0 15px;
+    }
+
+    /* 3. Hero & Subjects Grid */
+    .hero-title {
+        font-size: 2rem;
+    }
+
+    .hero-stats {
+        gap: 1.5rem;
+    }
+
+    .subjects-grid {
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 1rem;
+        padding: 0.5rem;
+    }
+
+    /* 4. Utility Classes for Mobile */
+    .mobile-hidden {
+        display: none !important;
+    }
+
+    .mobile-menu-btn {
+        display: flex !important;
+    }
 }
 
-@keyframes slideInLeft {
-    from { transform: translateX(100%); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
+@media (max-width: 480px) {
+    .stats-section {
+        grid-template-columns: 1fr; /* 1 col on very small screens */
+    }
+
+    .card-meta {
+        flex-direction: column;
+        gap: 0.5rem;
+        align-items: center;
+    }
+    
+    .search-bar {
+        display: none; /* Hide top search on very small screens if needed, or make it icon only */
+    }
+    
+    .search-bar.active {
+        display: flex;
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 100;
+        border-radius: 0;
+    }
 }
 
-/* 2. Skeleton Loading Animation */
-.skeleton-card {
-    background: #e0e0e0;
-    background: linear-gradient(90deg, var(--bg-secondary-color) 25%, var(--bg-tertiary-color) 50%, var(--bg-secondary-color) 75%);
-    background-size: 200% 100%;
-    animation: shimmer 1.5s infinite;
-    border-radius: 15px;
-    width: 100%;
-}
-
-@keyframes shimmer {
-    0% { background-position: 200% 0; }
-    100% { background-position: -200% 0; }
-}
-
-/* 3. Breadcrumbs */
-.breadcrumbs {
-    padding: 10px 0;
-    font-size: 0.9rem;
-    color: var(--text-color-light);
-    margin-bottom: 1rem;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.breadcrumbs a {
-    text-decoration: none;
-    color: inherit;
-    transition: color 0.2s;
-}
-
-.breadcrumbs a:hover {
-    color: var(--primary-color);
-}
-
-.breadcrumbs span {
-    opacity: 0.5;
-}
-
-/* 4. Empty State */
-.empty-state {
-    text-align: center;
-    padding: 3rem 2rem;
-    animation: fadeInUp 0.5s ease;
-    color: var(--text-color-light);
-}
-
-.empty-icon {
-    font-size: 4rem;
-    margin-bottom: 1rem;
-    opacity: 0.8;
-    display: block;
-}
-
-.empty-state h3 {
+/* Toggle Button for Sidebar (Default Hidden) */
+.mobile-menu-btn {
+    display: none;
+    background: transparent;
+    border: none;
+    font-size: 1.5rem;
     color: var(--text-color);
-    margin-bottom: 0.5rem;
+    cursor: pointer;
+    margin-left: 1rem;
 }
 
-/* 5. Active States */
-.dashboard-link.active {
-    background: var(--primary-color);
-    color: white;
-    box-shadow: 0 0 15px var(--shadow-glow);
-    border-color: transparent;
+/* Overlay for sidebar */
+.sidebar-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
 }
 
-/* 6. Page Transitions */
-body {
-    animation: pageFadeIn 0.5s ease-out;
-}
-
-@keyframes pageFadeIn {
-    from { opacity: 0; transform: translateY(10px); }
-    to { opacity: 1; transform: translateY(0); }
+.sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
 }

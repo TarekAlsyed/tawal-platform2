@@ -67,10 +67,19 @@ function showToast(message, type = 'info') {
 }
 
 // ✅ المشكلة 2: تحسين recordActivity لتكون Async وتنتظر الرد لضمان التسجيل في السيرفر
+// Throttle Activity Logging
+const activityQueue = {};
+
 async function recordActivity(type, name) {
     if (!CURRENT_STUDENT_ID) return;
+
+    // ✅ المشكلة 12: Throttling لمنع تكرار تسجيل نفس النشاط خلال 5 ثوانٍ
+    const key = `${type}_${name}`;
+    if (activityQueue[key] && Date.now() - activityQueue[key] < 5000) return;
+    activityQueue[key] = Date.now();
+
     try {
-        console.log(`📡 Recording: ${type} - ${name}`);
+        // console.log(`📡 Recording: ${type} - ${name}`);
         const response = await fetch(`${API_URL}/log-activity`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -138,9 +147,8 @@ function showError(title, message) {
 function formatDate(dateString) {
     if (!dateString || dateString === 'null' || dateString === 'undefined') return '-';
     try {
-        let safeDate = String(dateString).replace(' ', 'T');
-        if (!safeDate.includes('Z') && !safeDate.includes('+')) safeDate += 'Z';
-        const d = new Date(safeDate);
+        // دعم الـ Timestamps والأرقام
+        const d = new Date(isNaN(dateString) ? dateString : Number(dateString));
         if (isNaN(d.getTime())) return '-';
         return new Intl.DateTimeFormat('ar-EG', {
             timeZone: 'Africa/Cairo',
