@@ -77,8 +77,9 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const requestUrl = new URL(event.request.url);
 
-    // ✅ استثناء طلبات API من الكاش نهائياً (Network Only)
+    // ✅ استثناء طلبات API من الكاش نهائياً (Network Only) مع استجابة واضحة
     if (requestUrl.pathname.includes('/api/')) {
+        event.respondWith(fetch(event.request));
         return; 
     }
 

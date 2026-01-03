@@ -283,7 +283,7 @@ async function fetchStudents() {
     students.forEach(s => {
         const isBlocked = s.isblocked; 
         // ✅ المشكلة 1: استخدام &#39; بدلاً من \' لعدم كسر الـ HTML
-        const safeNameForJS = (s.name || '').replace(/'/g, "&#39;"); 
+        const safeNameForJS = (s.name || '').replace(/'/g, "\\'"); 
         
         html += `
             <tr>
