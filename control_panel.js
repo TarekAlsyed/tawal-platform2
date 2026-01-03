@@ -321,27 +321,30 @@ async function fetchStudents() {
 // ✅ المشكلة "undefined" في سجل الأنشطة: توحيد مسميات الحقول
 async function fetchActivityLogs() {
     const container = document.getElementById('activity-logs-container');
-    const res = await secureFetch('/admin/activity-logs'); 
-    if (!res) return;
-    const activities = await res.json();
+    if (!container) return; // ✅ Fix: Check if container exists
     
-    // ✅ المشكلة 8: عرض رسالة عند عدم وجود بيانات
-    if (!activities || activities.length === 0) {
-        container.innerHTML = '<div class="placeholder" style="text-align:center; padding:2rem; color:var(--text-secondary);">📭 لا توجد سجلات أنشطة حديثة</div>';
-        return;
-    }
+    try {
+        const res = await secureFetch('/admin/activity-logs'); 
+        if (!res) return;
+        const activities = await res.json();
+        
+        // ✅ Fix: Check if array
+        if (!activities || !Array.isArray(activities) || activities.length === 0) {
+            container.innerHTML = '<div class="placeholder" style="text-align:center; padding:2rem; color:var(--text-secondary);">📭 لا توجد سجلات أنشطة حديثة</div>';
+            return;
+        }
 
-    let html = `
-        <div class="admin-table-container">
-            <table class="admin-table">
-                <thead>
-                    <tr><th>الطالب</th><th>النشاط</th><th>التفاصيل</th><th>الوقت</th></tr>
-                </thead>
-                <tbody>`;
-                
-    activities.forEach(a => {
-        // ✅ حل مشكلة الـ undefined بفحص كلا المسميين (Case-sensitive check) & Normalization
-        let rawType = a.activityType || a.activitytype || '';
+        let html = `
+            <div class="admin-table-container">
+                <table class="admin-table">
+                    <thead>
+                        <tr><th>الطالب</th><th>النشاط</th><th>التفاصيل</th><th>الوقت</th></tr>
+                    </thead>
+                    <tbody>`;
+                    
+        activities.forEach(a => {
+            // ✅ حل مشكلة الـ undefined بفحص كلا المسميين (Case-sensitive check) & Normalization
+            let rawType = a.activityType || a.activitytype || '';
         if (typeof rawType === 'string') rawType = rawType.toLowerCase();
 
         const subject = a.subjectName || a.subjectname || '-';
@@ -366,6 +369,7 @@ async function fetchActivityLogs() {
     });
     container.innerHTML = html + '</tbody></table></div>';
     if (typeof lucide !== 'undefined') lucide.createIcons();
+    } catch(e) { console.error("Error loading activities:", e); }
 }
 
 // ✅ المشكلة 6: تحسين عرض تفاصيل الطالب مع إضافة Null Checks وفلترة "undefined"
@@ -449,25 +453,38 @@ window.showStudentDetails = async (studentId) => {
 };
 
 async function fetchMessages() {
-    const res = await secureFetch('/admin/messages');
-    if (!res) return;
-    const msgs = await res.json();
     const container = document.getElementById('messages-container');
-    if (msgs.length === 0) { container.innerHTML = '<p class="empty">لا توجد رسائل دعم فني.</p>'; return; }
-    container.innerHTML = msgs.map(m => `
-        <div style="padding: 15px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; background: #fff; border-right: 4px solid ${m.adminreply ? '#10b981' : '#f59e0b'};">
-            <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
-                <strong>${m.studentName || m.studentname || 'طالب'}</strong>
-                <span style="font-size:0.75rem; color:#9ca3af;">${formatDate(m.createdat)}</span>
-            </div>
-            <div style="background:#f9fafb; padding:10px; border-radius:8px; margin-bottom:10px; color:#374151;">${m.content}</div>
-            ${m.adminreply ? `<div style="color:var(--color-correct); font-size:0.9rem;">✅ تم الرد: ${m.adminreply}</div>` : `
-                <div style="display:flex; gap:10px;">
-                    <input type="text" id="reply-${m.id}" placeholder="اكتب ردك هنا..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px;">
-                    <button class="btn btn-green" onclick="sendReply(${m.id})">إرسال</button>
-                </div>`}
-            <button onclick="deleteMsg(${m.id})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size:0.8rem; margin-top:10px;">حذف الرسالة</button>
-        </div>`).join('');
+    if (!container) return; // ✅ Fix: Check if container exists
+
+    try {
+        const res = await secureFetch('/admin/messages');
+        if (!res) return;
+        const msgs = await res.json();
+        
+        // ✅ Fix: Check if array
+        if (!msgs || !Array.isArray(msgs) || msgs.length === 0) { 
+            container.innerHTML = '<p class="empty">لا توجد رسائل دعم فني.</p>'; 
+            return; 
+        }
+
+        container.innerHTML = msgs.map(m => `
+            <div style="padding: 15px; border: 1px solid #e5e7eb; border-radius: 12px; margin-bottom: 12px; background: #fff; border-right: 4px solid ${m.adminreply ? '#10b981' : '#f59e0b'};">
+                <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+                    <strong>${m.studentName || m.studentname || 'طالب'}</strong>
+                    <span style="font-size:0.75rem; color:#9ca3af;">${formatDate(m.createdAt || m.createdat)}</span>
+                </div>
+                <div style="background:#f9fafb; padding:10px; border-radius:8px; margin-bottom:10px; color:#374151;">${m.content}</div>
+                ${m.adminreply || m.adminReply ? `<div style="color:var(--color-correct); font-size:0.9rem;">✅ تم الرد: ${m.adminreply || m.adminReply}</div>` : `
+                    <div style="display:flex; gap:10px;">
+                        <input type="text" id="reply-${m.id}" placeholder="اكتب ردك هنا..." style="flex:1; padding:8px; border:1px solid #ddd; border-radius:6px;">
+                        <button class="btn btn-green" onclick="sendReply(${m.id})">إرسال</button>
+                    </div>`}
+                <button onclick="deleteMsg(${m.id})" style="color:#ef4444; background:none; border:none; cursor:pointer; font-size:0.8rem; margin-top:10px;">حذف الرسالة</button>
+            </div>`).join('');
+    } catch(e) {
+        console.error("Error loading messages:", e);
+        container.innerHTML = '<p class="empty" style="color:red">حدث خطأ في تحميل الرسائل.</p>';
+    }
 }
 
 async function fetchLocks() {
@@ -487,17 +504,33 @@ async function fetchLocks() {
 }
 
 async function fetchLogs() {
-    const res = await secureFetch('/admin/login-logs');
-    if (!res) return;
-    const logs = await res.json();
-    let html = `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>الطالب</th><th>وقت الدخول</th><th>الحالة</th></tr></thead><tbody>`;
-    html += logs.map(l => `
-        <tr>
-            <td>${l.name || l.studentname}</td>
-            <td>${formatDate(l.logintime)}</td>
-            <td><span class="badge ${l.logouttime ? 'bg-gray' : 'bg-green'}">${l.logouttime ? 'غادر' : 'متصل حالياً'}</span></td>
-        </tr>`).join('');
-    document.getElementById('logs-container').innerHTML = html + '</tbody></table></div>';
+    const container = document.getElementById('logs-container');
+    if (!container) return; // ✅ Fix: Check if container exists
+
+    try {
+        const res = await secureFetch('/admin/login-logs');
+        if (!res) return;
+        const logs = await res.json();
+        
+        // ✅ Fix: Check if array
+        if (!logs || !Array.isArray(logs) || logs.length === 0) {
+            container.innerHTML = '<p class="empty">لا توجد سجلات دخول.</p>';
+            return;
+        }
+
+        let html = `<div class="admin-table-container"><table class="admin-table"><thead><tr><th>الطالب</th><th>وقت الدخول</th><th>الحالة</th></tr></thead><tbody>`;
+        html += logs.map(l => `
+            <tr>
+                <td>${l.name || l.studentname}</td>
+                <td>${formatDate(l.loginTime || l.logintime)}</td>
+                <td><span class="badge ${l.logoutTime || l.logouttime ? 'bg-gray' : 'bg-green'}">${l.logoutTime || l.logouttime ? 'غادر' : 'متصل حالياً'}</span></td>
+            </tr>`).join('');
+        
+        container.innerHTML = html + '</tbody></table></div>';
+    } catch(e) {
+        console.error("Error loading logs:", e);
+        container.innerHTML = '<p class="empty" style="color:red">حدث خطأ في تحميل السجلات.</p>';
+    }
 }
 
 // =================================================================
