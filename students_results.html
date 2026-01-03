@@ -1,139 +1,111 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>نتائج الطلاب</title>
+<style>
+:root{--bg:#f7f7fb;--card:#ffffff;--text:#1f2937;--muted:#6b7280;--primary:#4e54c8;--success:#10b981;--danger:#ef4444;--border:#e5e7eb}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto;line-height:1.5}
+.container{max-width:1100px;margin:0 auto;padding:24px}
+.toolbar{display:flex;gap:12px;margin-bottom:16px}
+.toolbar input{flex:1;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#fff}
+#results-container{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
+.student-card{background:var(--card);border-radius:16px;box-shadow:0 6px 18px rgba(0,0,0,.06);overflow:hidden;border:1px solid var(--border)}
+.student-header{display:flex;justify-content:space-between;align-items:center;padding:18px}
+.student-info{display:flex;gap:12px;align-items:center}
+.student-avatar{width:44px;height:44px;border-radius:50%;background:#e0e7ff;color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:700}
+.student-details h3{margin:0;font-size:1rem}
+.student-details p{margin:0;color:var(--muted);font-size:.85rem}
+.overall-score{display:flex;flex-direction:column;align-items:center}
+.score-circle{width:64px;height:64px;border-radius:50%;background:conic-gradient(var(--success) calc(var(--score,0)*1%),#e5e7eb 0);display:flex;align-items:center;justify-content:center}
+.score-circle-inner{width:52px;height:52px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}
+.score-label{font-size:.8rem;color:var(--muted);margin-top:6px}
+.quiz-results{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;padding:0 18px 18px}
+.quiz-item{background:#f9fafb;border:1px solid var(--border);border-radius:12px;padding:14px}
+.quiz-name{color:var(--muted);font-size:.85rem;margin-bottom:6px}
+.spinner{width:36px;height:36px;border-radius:50%;border:3px solid #e5e7eb;border-top-color:var(--primary);animation:spin .8s linear infinite;margin:40px auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty-state{text-align:center;padding:30px;color:var(--muted)}
+.empty-state-icon{font-size:2rem;margin-bottom:10px}
+.btn{background:var(--primary);color:#fff;border:none;padding:10px 16px;border-radius:10px;cursor:pointer}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="toolbar">
+    <input id="search-input" type="text" placeholder="بحث عن طالب أو بريد">
+  </div>
+  <div id="results-container"></div>
+</div>
 <script>
-document.addEventListener('DOMContentLoaded', () => {
-    const API_URL = window.API_URL || '/api';
-    let allStudentsData = window.allStudentsData || [];
-    let currentSubject = localStorage.getItem('results_subject') || 'all';
-    let currentFilter = localStorage.getItem('results_filter') || 'all';
-    function ensureContainer() {
-        let el = document.getElementById('results-container');
-        if (!el) {
-            el = document.createElement('div');
-            el.id = 'results-container';
-            document.body.appendChild(el);
-        }
-        return el;
-    }
-        // Filter Results
-        function renderResults() {
-            const container = ensureContainer();
-            const search = document.getElementById('search-input').value.toLowerCase();
-            
-            if (!allStudentsData.length) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><h3>لا توجد بيانات</h3></div>';
-                return;
-            }
-
-            let filtered = allStudentsData.filter(student => {
-                // 1. Text Search
-                const matchName = (student.name || '').toLowerCase().includes(search);
-                const matchEmail = (student.email || '').toLowerCase().includes(search);
-                if (!matchName && !matchEmail) return false;
-
-                // 2. Score Filter
-                let matchScore = true;
-                const score = parseFloat(student.averageScore) || 0;
-                
-                if (currentFilter === 'excellent') matchScore = score >= 90;
-                else if (currentFilter === 'good') matchScore = score >= 75 && score < 90;
-                else if (currentFilter === 'pass') matchScore = score >= 50 && score < 75;
-                else if (currentFilter === 'fail') matchScore = score < 50;
-
-                return matchScore;
-            });
-
-            if (currentSubject !== 'all') {
-                filtered = filtered.filter(s => Array.isArray(s.subjects) && s.subjects.includes(currentSubject));
-            }
-            
-            displayStudents(filtered);
-            updateStats(filtered);
-        }
-
-        function displayStudents(students) {
-            const container = document.getElementById('results-container');
-            if (!students.length) {
-                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>لا توجد نتائج مطابقة</h3></div>';
-                return;
-            }
-
-            container.innerHTML = students.map(s => `
-                <div class="student-card">
-                    <div class="student-header">
-                        <div class="student-info">
-                            <div class="student-avatar">${s.name.charAt(0)}</div>
-                            <div class="student-details">
-                                <h3>${s.name}</h3>
-                                <p>${s.email}</p>
-                            </div>
-                        </div>
-                        <div class="overall-score">
-                            <div class="score-circle" style="--score: ${s.averageScore}">
-                                <div class="score-circle-inner">
-                                    <span style="font-size:1.2rem; font-weight:bold;">${Math.round(s.averageScore)}%</span>
-                                </div>
-                            </div>
-                            <div class="score-label">المعدل العام</div>
-                        </div>
-                    </div>
-                    <div class="quiz-results">
-                        <div class="quiz-item" style="text-align:center;">
-                            <div class="quiz-name">عدد الاختبارات</div>
-                            <div style="font-size:1.2rem; font-weight:bold;">${s.totalQuizzes}</div>
-                        </div>
-                        <div class="quiz-item" style="text-align:center;">
-                            <div class="quiz-name">أفضل درجة</div>
-                            <div style="font-size:1.2rem; font-weight:bold; color:var(--success);">${s.bestScore}%</div>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function updateStats(students) {
-            const ts = document.getElementById('total-students');
-            const tt = document.getElementById('total-tests');
-            const as = document.getElementById('avg-score');
-            const top = document.getElementById('top-score');
-            if (ts) ts.innerText = students.length;
-            const totalTests = students.reduce((acc, s) => acc + parseInt(s.totalQuizzes), 0);
-            if (tt) tt.innerText = totalTests;
-            
-            if (students.length) {
-                const avg = students.reduce((acc, s) => acc + parseFloat(s.averageScore), 0) / students.length;
-                if (as) as.innerText = Math.round(avg) + '%';
-                
-                const max = Math.max(...students.map(s => parseFloat(s.bestScore)));
-                if (top) top.innerText = max + '%';
-            } else {
-                if (as) as.innerText = '0%';
-                if (top) top.innerText = '0%';
-            }
-        }
-
-        // Fetch Data
-        async function loadData() {
-            try {
-                ensureContainer().innerHTML = '<div class="spinner"></div>';
-                const res = await fetch(`${API_URL}/public/students-detailed`);
-                if (!res.ok) throw new Error('Failed to load');
-                allStudentsData = await res.json();
-                renderResults();
-            } catch (e) {
-                ensureContainer().innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">❌</div>
-                        <h3>حدث خطأ في تحميل البيانات</h3>
-                        <button onclick="loadData()" class="btn" style="width:auto; border-radius:10px; padding:10px 20px; margin-top:20px;">إعادة المحاولة</button>
-                    </div>
-                `;
-            }
-        }
-
-        const searchInputEl = document.getElementById('search-input');
-        if (searchInputEl) searchInputEl.addEventListener('input', renderResults);
-
-        // Init
-        if (typeof initFilters === 'function') initFilters();
-        loadData();
+const API_URL='https://tawal-backend-main.fly.dev';
+let allStudentsData=[];
+function ensureContainer(){let el=document.getElementById('results-container');if(!el){el=document.createElement('div');el.id='results-container';document.body.appendChild(el)}return el}
+function renderResults(){
+  const container=ensureContainer();
+  const search=(document.getElementById('search-input')?.value||'').toLowerCase();
+  if(!allStudentsData.length){container.innerHTML='<div class="empty-state"><div class="empty-state-icon">📭</div><h3>لا توجد بيانات</h3></div>';return}
+  let filtered=allStudentsData.filter(student=>{
+    const name=(student.name||'').toLowerCase().includes(search);
+    const mail=(student.email||'').toLowerCase().includes(search);
+    if(!name&&!mail)return false;
+    return true;
+  });
+  container.innerHTML=filtered.map(s=>`
+    <div class="student-card">
+      <div class="student-header">
+        <div class="student-info">
+          <div class="student-avatar">${(s.name||'?').charAt(0)}</div>
+          <div class="student-details">
+            <h3>${s.name||''}</h3>
+            <p>${s.email||''}</p>
+          </div>
+        </div>
+        <div class="overall-score">
+          <div class="score-circle" style="--score:${Math.round(parseFloat(s.averageScore||0))}">
+            <div class="score-circle-inner"><span style="font-size:1rem;font-weight:700;">${Math.round(parseFloat(s.averageScore||0))}%</span></div>
+          </div>
+          <div class="score-label">المعدل العام</div>
+        </div>
+      </div>
+      <div class="quiz-results">
+        <div class="quiz-item" style="text-align:center;">
+          <div class="quiz-name">عدد الاختبارات</div>
+          <div style="font-weight:700;">${parseInt(s.totalQuizzes||0)}</div>
+        </div>
+        <div class="quiz-item" style="text-align:center;">
+          <div class="quiz-name">أفضل درجة</div>
+          <div style="font-weight:700;color:var(--success);">${parseInt(s.bestScore||0)}%</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+async function loadData(){
+  try{
+    ensureContainer().innerHTML='<div class="spinner"></div>';
+    const res=await fetch(`${API_URL}/api/public/students-detailed`);
+    if(!res.ok)throw new Error('Failed to load');
+    allStudentsData=await res.json();
+    renderResults();
+  }catch(e){
+    ensureContainer().innerHTML=`
+      <div class="empty-state">
+        <div class="empty-state-icon">❌</div>
+        <h3>حدث خطأ في تحميل البيانات</h3>
+        <button onclick="loadData()" class="btn">إعادة المحاولة</button>
+      </div>
+    `;
+  }
+}
+window.loadData=loadData;
+document.addEventListener('DOMContentLoaded',()=>{
+  const s=document.getElementById('search-input');
+  if(s)s.addEventListener('input',renderResults);
+  loadData();
 });
-    </script>
+</script>
+</body>
+</html>
