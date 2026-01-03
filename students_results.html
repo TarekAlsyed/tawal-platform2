@@ -1,694 +1,118 @@
-<!DOCTYPE html>
-<html lang="ar" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نتائج الطلاب | Tawal Academy</title>
-    
-    <link rel="icon" href="icon-192x192.png" type="image/png">
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
-    
-    <style>
-        :root {
-            --bg-color: #0f0f1e;
-            --bg-secondary: #1a1a2e;
-            --bg-tertiary: #252538;
-            --text-color: #f0f0f0;
-            --text-light: #b0b0d0;
-            --border-color: #2a2a4e;
-            --primary: #667eea;
-            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            --success: #2ecc71;
-            --warning: #f59e0b;
-            --danger: #ef4444;
-            --shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-        }
-
-        body.light-mode {
-            --bg-color: #f8f9fa;
-            --bg-secondary: #ffffff;
-            --bg-tertiary: #f1f3f5;
-            --text-color: #1a1a2e;
-            --text-light: #6b7280;
-            --border-color: #e5e7eb;
-            --shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-        }
-
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        body {
-            font-family: 'Cairo', sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            min-height: 100vh;
-            direction: rtl;
-            transition: background 0.3s, color 0.3s;
-        }
-
-        .container {
-            width: 95%;
-            max-width: 1400px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 2rem;
-            padding: 1rem 0;
-        }
-
-        .logo {
-            font-size: 1.8rem;
-            font-weight: 800;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .header-controls {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .btn {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            width: 44px;
-            height: 44px;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            text-decoration: none;
-            font-size: 1.4rem;
-            transition: all 0.3s;
-        }
-
-        .btn:hover {
-            background: var(--primary);
-            color: white;
-            transform: scale(1.1);
-        }
-
-        .page-title {
-            text-align: center;
-            margin-bottom: 2rem;
-        }
-
-        .page-title h1 {
-            font-size: 2.5rem;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        .page-title p {
-            color: var(--text-light);
-            font-size: 1.1rem;
-        }
-
-        .stats-overview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-
-        .stat-card {
-            background: var(--bg-secondary);
-            padding: 1.5rem;
-            border-radius: 15px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            transition: transform 0.3s;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .stat-number {
-            font-size: 2.5rem;
-            font-weight: 800;
-            background: var(--primary-gradient);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            color: var(--text-light);
-            font-size: 0.9rem;
-        }
-
-        .controls-section {
-            background: var(--bg-secondary);
-            padding: 1.5rem;
-            border-radius: 15px;
-            margin-bottom: 2rem;
-            border: 1px solid var(--border-color);
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 1rem;
-        }
-
-        .search-box {
-            flex: 1;
-            min-width: 250px;
-        }
-
-        .search-box input {
-            width: 100%;
-            padding: 0.8rem 1rem;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-color);
-            color: var(--text-color);
-            font-family: 'Cairo', sans-serif;
-            font-size: 1rem;
-        }
-
-        .filter-buttons {
-            display: flex;
-            gap: 0.5rem;
-            flex-wrap: wrap;
-        }
-
-        .filter-btn {
-            padding: 0.6rem 1.2rem;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            background: var(--bg-color);
-            color: var(--text-color);
-            cursor: pointer;
-            transition: all 0.3s;
-            font-family: 'Cairo', sans-serif;
-            font-weight: 600;
-        }
-
-        .filter-btn.active {
-            background: var(--primary-gradient);
-            color: white;
-            border-color: transparent;
-        }
-
-        .results-grid {
-            display: grid;
-            gap: 1.5rem;
-        }
-
-        .student-card {
-            background: var(--bg-secondary);
-            border-radius: 15px;
-            padding: 1.5rem;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s;
-            animation: fadeIn 0.5s ease;
-        }
-
-        .student-card:hover {
-            transform: translateY(-3px);
-            box-shadow: var(--shadow);
-        }
-
-        .student-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 1rem;
-            padding-bottom: 1rem;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .student-info {
-            display: flex;
-            align-items: center;
-            gap: 1rem;
-        }
-
-        .student-avatar {
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            background: var(--primary-gradient);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: white;
-        }
-
-        .student-details h3 {
-            font-size: 1.2rem;
-            margin-bottom: 0.3rem;
-        }
-
-        .student-details p {
-            font-size: 0.9rem;
-            color: var(--text-light);
-        }
-
-        .overall-score {
-            text-align: center;
-        }
-
-        .score-circle {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.5rem;
-            font-weight: bold;
-            background: conic-gradient(var(--success) calc(var(--score) * 3.6deg), var(--bg-color) 0deg);
-            padding: 3px;
-            margin: 0 auto 0.5rem;
-        }
-
-        .score-circle-inner {
-            width: 100%;
-            height: 100%;
-            background: var(--bg-secondary);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .score-label {
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-
-        .quiz-results {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
-            margin-top: 1rem;
-        }
-
-        .quiz-item {
-            background: var(--bg-color);
-            padding: 1rem;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            transition: all 0.3s;
-        }
-
-        .quiz-item:hover {
-            border-color: var(--primary);
-        }
-
-        .quiz-name {
-            font-weight: 600;
-            margin-bottom: 0.5rem;
-            font-size: 0.95rem;
-        }
-
-        .quiz-score {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.5rem;
-        }
-
-        .score-badge {
-            padding: 0.3rem 0.8rem;
-            border-radius: 15px;
-            font-weight: 700;
-            font-size: 0.9rem;
-        }
-
-        .score-excellent { background: rgba(46, 204, 113, 0.2); color: var(--success); }
-        .score-good { background: rgba(52, 152, 219, 0.2); color: #3498db; }
-        .score-pass { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
-        .score-fail { background: rgba(239, 68, 68, 0.2); color: var(--danger); }
-
-        .quiz-date {
-            font-size: 0.75rem;
-            color: var(--text-light);
-        }
-
-        .spinner {
-            border: 3px solid var(--border-color);
-            border-top: 3px solid var(--primary);
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            animation: spin 1s linear infinite;
-            margin: 3rem auto;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 3rem;
-            color: var(--text-light);
-        }
-
-        .empty-state-icon {
-            font-size: 4rem;
-            margin-bottom: 1rem;
-            opacity: 0.5;
-        }
-
-        @media (max-width: 768px) {
-            .page-title h1 {
-                font-size: 1.8rem;
-            }
-
-            .controls-section {
-                flex-direction: column;
-            }
-
-            .student-header {
-                flex-direction: column;
-                gap: 1rem;
-            }
-
-            .quiz-results {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="container">
-        <header class="header">
-            <h1 class="logo">📊 Tawal Academy</h1>
-            <div class="header-controls">
-                <a href="index.html" class="btn" title="الرئيسية">🏠</a>
-                <button onclick="toggleTheme()" class="btn" title="تبديل الوضع">🌙</button>
-            </div>
-        </header>
-
-        <div class="page-title">
-            <h1>🏆 نتائج الطلاب</h1>
-            <p>عرض شامل لجميع نتائج الاختبارات</p>
-        </div>
-
-        <div class="stats-overview" id="stats-overview">
-            <div class="stat-card">
-                <div class="stat-number" id="total-students">0</div>
-                <div class="stat-label">إجمالي الطلاب</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="total-tests">0</div>
-                <div class="stat-label">إجمالي الاختبارات</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="avg-score">0%</div>
-                <div class="stat-label">متوسط النتائج</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-number" id="top-score">0%</div>
-                <div class="stat-label">أعلى درجة</div>
-            </div>
-        </div>
-
-        <div class="controls-section">
-            <div class="search-box">
-                <input type="text" id="search-input" placeholder="🔍 ابحث عن طالب بالاسم أو البريد...">
-            </div>
-            <div class="filter-buttons">
-                <button class="filter-btn active" onclick="filterResults('all')">الكل</button>
-                <button class="filter-btn" onclick="filterResults('excellent')">ممتاز (90%+)</button>
-                <button class="filter-btn" onclick="filterResults('good')">جيد (75%+)</button>
-                <button class="filter-btn" onclick="filterResults('pass')">مقبول (50%+)</button>
-                <button class="filter-btn" onclick="filterResults('fail')">راسب (&lt;50%)</button>
-            </div>
-        </div>
-
-        <div class="results-grid" id="results-container">
-            <div class="spinner"></div>
-        </div>
-    </div>
-
-    <script>
-        const API_URL = 'https://tawal-backend-main.fly.dev/api';
-        let allStudentsData = [];
-        let currentFilter = 'all';
-
-        const SUBJECTS_LIST = {
-            gis_networks: "تطبيقات GIS في الشبكات",
-            transport: "جغرافية النقل",
-            geo_maps: "الخرائط الجيولوجية",
-            projections: "مساقط الخرائط",
-            research: "مناهج البحث",
-            surveying_texts: "نصوص المساحة",
-            arid_lands: "الأراضي الجافة"
-        };
-
-        // Theme Toggle
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-        }
-
-        // Load saved theme
-        if (localStorage.getItem('theme') === 'light') {
-            document.body.classList.add('light-mode');
-        }
-
-        // Format Date
-        function formatDate(dateString) {
-            if (!dateString) return '-';
-            try {
-                let safeDate = dateString.replace(' ', 'T');
-                if (!safeDate.includes('Z') && !safeDate.includes('+')) safeDate += 'Z';
-                const d = new Date(safeDate);
-                if (isNaN(d.getTime())) return '-';
-                return new Intl.DateTimeFormat('ar-EG', {
-                    timeZone: 'Africa/Cairo',
-                    year: 'numeric', month: '2-digit', day: '2-digit',
-                    hour: '2-digit', minute: '2-digit', hour12: true
-                }).format(d);
-            } catch (e) { return '-'; }
-        }
-
-        // Get Score Class
-        function getScoreClass(score) {
-            if (score >= 90) return 'score-excellent';
-            if (score >= 75) return 'score-good';
-            if (score >= 50) return 'score-pass';
-            return 'score-fail';
-        }
-
-        // Load All Data
-        async function loadAllData() {
-            try {
-                // استخدام الرابط العام بدلاً من رابط الأدمن
-                const studentsRes = await fetch(`${API_URL}/students-list`);
-                if (!studentsRes.ok) throw new Error('Failed to fetch students');
-                
-                const students = await studentsRes.json();
-                
-                // Fetch results for each student
-                const studentsWithResults = await Promise.all(
-                    students.map(async (student) => {
-                        try {
-                            const resultsRes = await fetch(`${API_URL}/students/${student.id}/results`);
-                            const results = resultsRes.ok ? await resultsRes.json() : [];
-                            
-                            const statsRes = await fetch(`${API_URL}/students/${student.id}/stats`);
-                            const stats = statsRes.ok ? await statsRes.json() : {};
-                            
-                            return {
-                                ...student,
-                                results: results || [],
-                                stats: stats || {}
-                            };
-                        } catch (e) {
-                            return { ...student, results: [], stats: {} };
-                        }
-                    })
-                );
-
-                allStudentsData = studentsWithResults;
-                updateStats();
-                displayResults(allStudentsData);
-            } catch (error) {
-                console.error('Error loading data:', error);
-                document.getElementById('results-container').innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">❌</div>
-                        <h3>فشل تحميل البيانات</h3>
-                        <p>حدث خطأ أثناء جلب البيانات من السيرفر</p>
-                    </div>`;
-            }
-        }
-
-        // Update Statistics
-        function updateStats() {
-            const totalStudents = allStudentsData.length;
-            const totalTests = allStudentsData.reduce((sum, s) => sum + (s.results?.length || 0), 0);
-            
-            let totalScore = 0;
-            let scoreCount = 0;
-            let topScore = 0;
-
-            allStudentsData.forEach(student => {
-                if (student.results && student.results.length > 0) {
-                    student.results.forEach(result => {
-                        const score = result.score || 0;
-                        totalScore += score;
-                        scoreCount++;
-                        if (score > topScore) topScore = score;
-                    });
-                }
-            });
-
-            const avgScore = scoreCount > 0 ? Math.round(totalScore / scoreCount) : 0;
-
-            document.getElementById('total-students').textContent = totalStudents;
-            document.getElementById('total-tests').textContent = totalTests;
-            document.getElementById('avg-score').textContent = avgScore + '%';
-            document.getElementById('top-score').textContent = topScore + '%';
-        }
-
-        // Display Results
-        function displayResults(students) {
+        // Filter Results
+        function renderResults() {
             const container = document.getElementById('results-container');
+            const search = document.getElementById('search-input').value.toLowerCase();
             
-            if (students.length === 0) {
-                container.innerHTML = `
-                    <div class="empty-state">
-                        <div class="empty-state-icon">📭</div>
-                        <h3>لا توجد نتائج</h3>
-                        <p>لا يوجد طلاب مسجلين أو لم يتم إجراء اختبارات بعد</p>
-                    </div>`;
+            if (!allStudentsData.length) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">📭</div><h3>لا توجد بيانات</h3></div>';
                 return;
             }
 
-            container.innerHTML = students.map(student => {
-                const avgScore = student.stats?.averageScore || 0;
-                const bestScore = student.stats?.bestScore || 0;
-                const totalQuizzes = student.stats?.totalQuizzes || 0;
+            let filtered = allStudentsData.filter(student => {
+                // 1. Text Search
+                const matchName = (student.name || '').toLowerCase().includes(search);
+                const matchEmail = (student.email || '').toLowerCase().includes(search);
+                if (!matchName && !matchEmail) return false;
+
+                // 2. Score Filter
+                let matchScore = true;
+                const score = parseFloat(student.averageScore) || 0;
                 
-                const resultsHTML = student.results && student.results.length > 0
-                    ? student.results.map(result => {
-                        const subjectId = result.subjectId || result.subjectid;
-                        const quizName = SUBJECTS_LIST[subjectId] || result.quizName || result.quizname || 'اختبار';
-                        const score = result.score || 0;
-                        const completedAt = result.completedAt || result.completedat;
-                        
-                        return `
-                            <div class="quiz-item">
-                                <div class="quiz-name">${quizName}</div>
-                                <div class="quiz-score">
-                                    <span>النتيجة:</span>
-                                    <span class="score-badge ${getScoreClass(score)}">${score}%</span>
-                                </div>
-                                <div class="quiz-date">${formatDate(completedAt)}</div>
-                            </div>`;
-                    }).join('')
-                    : '<p style="text-align:center; color:var(--text-light); padding:1rem;">لم يجري أي اختبار بعد</p>';
+                if (currentFilter === 'excellent') matchScore = score >= 90;
+                else if (currentFilter === 'good') matchScore = score >= 75 && score < 90;
+                else if (currentFilter === 'pass') matchScore = score >= 50 && score < 75;
+                else if (currentFilter === 'fail') matchScore = score < 50;
 
-                return `
-                    <div class="student-card" data-average="${avgScore}" data-name="${student.name}" data-email="${student.email}">
-                        <div class="student-header">
-                            <div class="student-info">
-                                <div class="student-avatar">${student.name.charAt(0)}</div>
-                                <div class="student-details">
-                                    <h3>${student.name}</h3>
-                                    <p>${student.email}</p>
-                                </div>
-                            </div>
-                            <div class="overall-score">
-                                <div class="score-circle" style="--score: ${avgScore}">
-                                    <div class="score-circle-inner">${avgScore}%</div>
-                                </div>
-                                <div class="score-label">المعدل التراكمي</div>
-                            </div>
-                        </div>
-                        
-                        <div style="display:flex; justify-content:space-around; margin:1rem 0; padding:1rem 0; border-bottom:1px solid var(--border-color);">
-                            <div style="text-align:center;">
-                                <div style="font-size:1.3rem; font-weight:bold; color:var(--primary);">${totalQuizzes}</div>
-                                <div style="font-size:0.8rem; color:var(--text-light);">اختبارات</div>
-                            </div>
-                            <div style="text-align:center;">
-                                <div style="font-size:1.3rem; font-weight:bold; color:var(--success);">${bestScore}%</div>
-                                <div style="font-size:0.8rem; color:var(--text-light);">أفضل درجة</div>
-                            </div>
-                        </div>
-                        
-                        <div class="quiz-results">
-                            ${resultsHTML}
-                        </div>
-                    </div>`;
-            }).join('');
-        }
+                return matchScore;
+            });
 
-        // Filter Results
-        function filterResults(filter) {
-            currentFilter = filter;
-            
-            // Update button states
-            document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
-            
-            let filtered = allStudentsData;
-            
-            if (filter !== 'all') {
-                filtered = allStudentsData.filter(student => {
-                    const avg = student.stats?.averageScore || 0;
-                    
-                    switch(filter) {
-                        case 'excellent': return avg >= 90;
-                        case 'good': return avg >= 75 && avg < 90;
-                        case 'pass': return avg >= 50 && avg < 75;
-                        case 'fail': return avg < 50;
-                        default: return true;
-                    }
-                });
+            if (currentSubject !== 'all') {
+                filtered = filtered.filter(s => Array.isArray(s.subjects) && s.subjects.includes(currentSubject));
             }
             
-            displayResults(filtered);
+            displayStudents(filtered);
+            updateStats(filtered);
         }
 
-        // Search Functionality
-        document.getElementById('search-input').addEventListener('input', (e) => {
-            const query = e.target.value.toLowerCase();
-            const cards = document.querySelectorAll('.student-card');
-            
-            cards.forEach(card => {
-                const name = card.dataset.name.toLowerCase();
-                const email = card.dataset.email.toLowerCase();
-                
-                if (name.includes(query) || email.includes(query)) {
-                    card.style.display = 'block';
-                } else {
-                    card.style.display = 'none';
-                }
-            });
-        });
+        function displayStudents(students) {
+            const container = document.getElementById('results-container');
+            if (!students.length) {
+                container.innerHTML = '<div class="empty-state"><div class="empty-state-icon">🔍</div><h3>لا توجد نتائج مطابقة</h3></div>';
+                return;
+            }
 
-        // Load data on page load
-        document.addEventListener('DOMContentLoaded', loadAllData);
+            container.innerHTML = students.map(s => `
+                <div class="student-card">
+                    <div class="student-header">
+                        <div class="student-info">
+                            <div class="student-avatar">${s.name.charAt(0)}</div>
+                            <div class="student-details">
+                                <h3>${s.name}</h3>
+                                <p>${s.email}</p>
+                            </div>
+                        </div>
+                        <div class="overall-score">
+                            <div class="score-circle" style="--score: ${s.averageScore}">
+                                <div class="score-circle-inner">
+                                    <span style="font-size:1.2rem; font-weight:bold;">${Math.round(s.averageScore)}%</span>
+                                </div>
+                            </div>
+                            <div class="score-label">المعدل العام</div>
+                        </div>
+                    </div>
+                    <div class="quiz-results">
+                        <div class="quiz-item" style="text-align:center;">
+                            <div class="quiz-name">عدد الاختبارات</div>
+                            <div style="font-size:1.2rem; font-weight:bold;">${s.totalQuizzes}</div>
+                        </div>
+                        <div class="quiz-item" style="text-align:center;">
+                            <div class="quiz-name">أفضل درجة</div>
+                            <div style="font-size:1.2rem; font-weight:bold; color:var(--success);">${s.bestScore}%</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function updateStats(students) {
+            document.getElementById('total-students').innerText = students.length;
+            const totalTests = students.reduce((acc, s) => acc + parseInt(s.totalQuizzes), 0);
+            document.getElementById('total-tests').innerText = totalTests;
+            
+            if (students.length) {
+                const avg = students.reduce((acc, s) => acc + parseFloat(s.averageScore), 0) / students.length;
+                document.getElementById('avg-score').innerText = Math.round(avg) + '%';
+                
+                const max = Math.max(...students.map(s => parseFloat(s.bestScore)));
+                document.getElementById('top-score').innerText = max + '%';
+            } else {
+                document.getElementById('avg-score').innerText = '0%';
+                document.getElementById('top-score').innerText = '0%';
+            }
+        }
+
+        // Fetch Data
+        async function loadData() {
+            try {
+                document.getElementById('results-container').innerHTML = '<div class="spinner"></div>';
+                const res = await fetch(`${API_URL}/public/students-detailed`);
+                if (!res.ok) throw new Error('Failed to load');
+                allStudentsData = await res.json();
+                renderResults();
+            } catch (e) {
+                document.getElementById('results-container').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <h3>حدث خطأ في تحميل البيانات</h3>
+                        <button onclick="loadData()" class="btn" style="width:auto; border-radius:10px; padding:10px 20px; margin-top:20px;">إعادة المحاولة</button>
+                    </div>
+                `;
+            }
+        }
+
+        document.getElementById('search-input').addEventListener('input', renderResults);
+
+        // Init
+        initFilters();
+        loadData();
     </script>
-</body>
-</html>

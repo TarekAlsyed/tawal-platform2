@@ -188,7 +188,21 @@ function addLogoutButton() {
 }
 
 async function loadAllData() {
-    await Promise.all([fetchStats(), fetchStudents(), fetchMessages(), fetchLocks(), fetchActivityLogs(), fetchLogs()]);
+    const results = await Promise.allSettled([
+        fetchStats(), 
+        fetchStudents(), 
+        fetchMessages(), 
+        fetchLocks(), 
+        fetchActivityLogs(), 
+        fetchLogs()
+    ]);
+    
+    results.forEach((result, index) => {
+        if (result.status === 'rejected') {
+            // تجاهل الأخطاء المتكررة في الكونسول إذا كانت بسبب مشاكل الشبكة المؤقتة
+            console.warn(`⚠️ Warning loading data (Index ${index}):`, result.reason);
+        }
+    });
 }
 
 // =================================================================
@@ -240,7 +254,9 @@ async function fetchStudents() {
     GLOBAL_STUDENTS_DATA = students;
     
     const container = document.getElementById('students-container');
-    if (students.length === 0) {
+    if (!container) return;
+
+    if (!students || !Array.isArray(students) || students.length === 0) {
         container.innerHTML = '<p class="empty">لا يوجد طلاب مسجلين.</p>';
         return;
     }
