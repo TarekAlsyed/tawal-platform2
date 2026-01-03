@@ -1,3 +1,9 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = window.API_URL || '/api';
+    let allStudentsData = window.allStudentsData || [];
+    let currentSubject = localStorage.getItem('results_subject') || 'all';
+    let currentFilter = localStorage.getItem('results_filter') || 'all';
         // Filter Results
         function renderResults() {
             const container = document.getElementById('results-container');
@@ -110,9 +116,11 @@
             }
         }
 
-        document.getElementById('search-input').addEventListener('input', renderResults);
+        const searchInputEl = document.getElementById('search-input');
+        if (searchInputEl) searchInputEl.addEventListener('input', renderResults);
 
         // Init
-        initFilters();
+        if (typeof initFilters === 'function') initFilters();
         loadData();
+});
     </script>
