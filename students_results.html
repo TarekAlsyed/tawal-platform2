@@ -1,6 +1,21 @@
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+    const API_URL = window.API_URL || '/api';
+    let allStudentsData = window.allStudentsData || [];
+    let currentSubject = localStorage.getItem('results_subject') || 'all';
+    let currentFilter = localStorage.getItem('results_filter') || 'all';
+    function ensureContainer() {
+        let el = document.getElementById('results-container');
+        if (!el) {
+            el = document.createElement('div');
+            el.id = 'results-container';
+            document.body.appendChild(el);
+        }
+        return el;
+    }
         // Filter Results
         function renderResults() {
-            const container = document.getElementById('results-container');
+            const container = ensureContainer();
             const search = document.getElementById('search-input').value.toLowerCase();
             
             if (!allStudentsData.length) {
@@ -75,32 +90,36 @@
         }
 
         function updateStats(students) {
-            document.getElementById('total-students').innerText = students.length;
+            const ts = document.getElementById('total-students');
+            const tt = document.getElementById('total-tests');
+            const as = document.getElementById('avg-score');
+            const top = document.getElementById('top-score');
+            if (ts) ts.innerText = students.length;
             const totalTests = students.reduce((acc, s) => acc + parseInt(s.totalQuizzes), 0);
-            document.getElementById('total-tests').innerText = totalTests;
+            if (tt) tt.innerText = totalTests;
             
             if (students.length) {
                 const avg = students.reduce((acc, s) => acc + parseFloat(s.averageScore), 0) / students.length;
-                document.getElementById('avg-score').innerText = Math.round(avg) + '%';
+                if (as) as.innerText = Math.round(avg) + '%';
                 
                 const max = Math.max(...students.map(s => parseFloat(s.bestScore)));
-                document.getElementById('top-score').innerText = max + '%';
+                if (top) top.innerText = max + '%';
             } else {
-                document.getElementById('avg-score').innerText = '0%';
-                document.getElementById('top-score').innerText = '0%';
+                if (as) as.innerText = '0%';
+                if (top) top.innerText = '0%';
             }
         }
 
         // Fetch Data
         async function loadData() {
             try {
-                document.getElementById('results-container').innerHTML = '<div class="spinner"></div>';
+                ensureContainer().innerHTML = '<div class="spinner"></div>';
                 const res = await fetch(`${API_URL}/public/students-detailed`);
                 if (!res.ok) throw new Error('Failed to load');
                 allStudentsData = await res.json();
                 renderResults();
             } catch (e) {
-                document.getElementById('results-container').innerHTML = `
+                ensureContainer().innerHTML = `
                     <div class="empty-state">
                         <div class="empty-state-icon">❌</div>
                         <h3>حدث خطأ في تحميل البيانات</h3>
@@ -110,9 +129,11 @@
             }
         }
 
-        document.getElementById('search-input').addEventListener('input', renderResults);
+        const searchInputEl = document.getElementById('search-input');
+        if (searchInputEl) searchInputEl.addEventListener('input', renderResults);
 
         // Init
-        initFilters();
+        if (typeof initFilters === 'function') initFilters();
         loadData();
+});
     </script>
