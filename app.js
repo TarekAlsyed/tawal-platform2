@@ -599,6 +599,8 @@ window.loadLevelFile = async (key, idx) => {
 function runQuizEngine(questions, title, subjectId) {
     if (!questions || questions.length === 0) return;
     QUIZ_IN_PROGRESS = true; let idx = 0, correct = 0, incorrectList = [];
+    const startTime = Date.now();
+    const perQuestionTimes = [];
     const shuffled = shuffleArray(questions);
     const body = $('quiz-body'), footer = $('quiz-footer'), nextBtn = $('next-btn');
     body.style.display = 'block'; footer.style.display = 'block'; nextBtn.style.display = 'block';
@@ -606,6 +608,7 @@ function runQuizEngine(questions, title, subjectId) {
     body.innerHTML = `<h3 id="q-txt" style="margin-bottom:1.5rem;"></h3><div id="opts" class="options-container"></div><p id="fb" class="feedback"></p>`;
     
     function loadQ() {
+        const qStart = Date.now();
         const q = shuffled[idx]; $('q-txt').innerText = q.question; 
         $('question-counter').innerText = `سؤال ${idx+1} / ${shuffled.length}`; 
         $('progress-bar').style.width = `${((idx+1)/shuffled.length)*100}%`;
@@ -617,13 +620,21 @@ function runQuizEngine(questions, title, subjectId) {
             const isCorr = q.type==='tf' ? ((i===0) === (String(q.answer).toLowerCase()==='true')) : (i===q.answer);
             b.onclick = () => {
                 document.querySelectorAll('.option-btn').forEach(btn=>btn.disabled=true);
+                const chosenIndex = i;
                 if(isCorr) { correct++; b.classList.add('correct'); fb.innerHTML = '✅ ممتاز'; }
-                else { b.classList.add('incorrect'); fb.innerHTML = '❌ خطأ'; incorrectList.push(q); 
+                else { b.classList.add('incorrect'); fb.innerHTML = '❌ خطأ'; 
+                    let corrText = '';
+                    if(q.type==='tf') corrText = String(q.answer).toLowerCase()==='true' ? 'صح' : 'خطأ';
+                    else corrText = Array.isArray(q.options) && q.options[q.answer] !== undefined ? q.options[q.answer] : '';
+                    const chosenText = q.type==='tf' ? (i===0?'صح':'خطأ') : txt;
+                    incorrectList.push({ question: q.question, correct: corrText, chosen: chosenText });
                     const all = document.querySelectorAll('.option-btn');
                     if(q.type==='tf') all[String(q.answer).toLowerCase()==='true'?0:1].classList.add('correct');
                     else all[q.answer].classList.add('correct');
                 }
                 nextBtn.disabled = false;
+                const dt = Math.max(0, Math.round((Date.now() - qStart)/1000));
+                perQuestionTimes.push(dt);
             };
             optsDiv.appendChild(b);
         });
@@ -634,11 +645,119 @@ function runQuizEngine(questions, title, subjectId) {
         QUIZ_IN_PROGRESS = false; body.style.display = 'none'; footer.style.display = 'none';
         const resDiv = $('results-container'); resDiv.style.display = 'flex';
         const percent = Math.round((correct / questions.length) * 100);
+        const wrongCount = questions.length - correct;
+        const elapsed = Math.max(0, Date.now() - startTime);
+        const totalSeconds = Math.round(elapsed / 1000);
+        const mm = String(Math.floor(totalSeconds / 60)).padStart(2, '0');
+        const ss = String(totalSeconds % 60).padStart(2, '0');
+        const timeSpent = `${mm}:${ss}`;
+        let saveResp = null;
         if (!title.includes('مراجعة')) {
-            await apiRequest('/quiz-results', { method: 'POST', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID, quizName: title, score: percent, totalQuestions: questions.length, correctAnswers: correct, subjectId: subjectId || getSubjectKey() }) });
+            const payload = { studentId: CURRENT_STUDENT_ID, quizName: title, score: percent, totalQuestions: questions.length, correctAnswers: correct, subjectId: subjectId || getSubjectKey(), timeSpentSeconds: totalSeconds, questionTimes: perQuestionTimes, wrongAnswers: incorrectList };
+            try {
+                const r = await apiRequest('/quiz-results', { method: 'POST', body: JSON.stringify(payload) });
+                saveResp = await r.json();
+            } catch(e) {}
         }
-        resDiv.innerHTML = `<h2>النتيجة: ${percent}%</h2><button onclick="location.reload()" class="next-btn">🔄 إعادة</button>
-            <a href="quiz.html?subject=${getSubjectKey()}" class="card-btn">📂 خروج</a>`;
+        const badges = [];
+        if (percent >= 90) badges.push({ icon: '⭐', name: 'النجم الساطع', desc: 'أكثر من 90%' });
+        else if (percent >= 75) badges.push({ icon: '🏅', name: 'مثابر', desc: 'أكثر من 75%' });
+        else if (percent >= 50) badges.push({ icon: '🎯', name: 'متقدم', desc: 'أكثر من 50%' });
+        const wrongListHtml = incorrectList.map(q => {
+            let ansTxt = '';
+            ansTxt = q.correct || '';
+            return `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;">
+                <div style="font-weight:700;color:#1f2937">${q.question}</div>
+                <div style="font-size:.9rem;color:#6b7280">الإجابة الصحيحة: <span style="font-weight:600;color:#10b981">${ansTxt}</span></div>
+                ${q.chosen?`<div style="font-size:.9rem;color:#9ca3af">إجابتك: ${q.chosen}</div>`:''}
+            </div>`;
+        }).join('');
+        const badgesHtml = badges.length ? `
+            <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:14px;margin-bottom:12px;">
+                <h4 style="margin:0 0 8px 0;color:#92400e">إنجازات جديدة</h4>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    ${badges.map(b=>`<div style="background:#fff;padding:10px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.08);display:flex;gap:8px;align-items:center;">
+                        <span style="font-size:1.4rem">${b.icon}</span>
+                        <div><div style="font-weight:700;color:#92400e">${b.name}</div><div style="font-size:.85rem;color:#78350f">${b.desc}</div></div>
+                    </div>`).join('')}
+                </div>
+            </div>` : '';
+        const xpCoinsHtml = (() => {
+            const p = saveResp && saveResp.progress ? saveResp.progress : null;
+            if (!p) return '';
+            return `
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px;width:100%;max-width:900px;">
+                    <div style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:12px;padding:14px;text-align:center">
+                        <div id="xp-count" style="font-size:1.4rem;font-weight:700;color:#10b981">${p.xp}</div>
+                        <div style="font-size:.9rem;color:#6b7280">XP الإجمالي</div>
+                    </div>
+                    <div style="background:#fff7ed;border:1px solid #ffedd5;border-radius:12px;padding:14px;text-align:center">
+                        <div style="font-size:1.4rem;font-weight:700;color:#f59e0b">${p.coins}</div>
+                        <div style="font-size:.9rem;color:#6b7280">العملات</div>
+                    </div>
+                    <div style="background:#eef2ff;border:1px solid #e0e7ff;border-radius:12px;padding:14px;">
+                        <div style="display:flex;justify-content:space-between;margin-bottom:6px;"><span>المستوى</span><span style="font-weight:700;color:#667eea">${p.level}</span></div>
+                        <div style="height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden">
+                            <div style="width:${Math.min(100,(p.xp%1000)/10)}%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2)"></div>
+                        </div>
+                    </div>
+                </div>`;
+        })();
+        resDiv.innerHTML = `
+            <div style="text-align:center;margin-bottom:16px;">
+                <div style="font-size:3rem;font-weight:800;background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${percent}%</div>
+                <div style="color:#6b7280;margin-top:6px;">النتيجة النهائية</div>
+            </div>
+            <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;width:100%;max-width:900px;">
+                <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;text-align:center">
+                    <div style="font-size:1.4rem;font-weight:700;color:#4b5563">${questions.length}</div>
+                    <div style="font-size:.9rem;color:#6b7280">إجمالي الأسئلة</div>
+                </div>
+                <div style="background:#ecfdf5;border:1px solid #d1fae5;border-radius:12px;padding:14px;text-align:center">
+                    <div style="font-size:1.4rem;font-weight:700;color:#10b981">${correct}</div>
+                    <div style="font-size:.9rem;color:#6b7280">إجابات صحيحة</div>
+                </div>
+                <div style="background:#fef2f2;border:1px solid #fee2e2;border-radius:12px;padding:14px;text-align:center">
+                    <div style="font-size:1.4rem;font-weight:700;color:#ef4444">${wrongCount}</div>
+                    <div style="font-size:.9rem;color:#6b7280">إجابات خاطئة</div>
+                </div>
+                <div style="background:#eff6ff;border:1px solid #dbeafe;border-radius:12px;padding:14px;text-align:center">
+                    <div style="font-size:1.4rem;font-weight:700;color:#3b82f6">${timeSpent}</div>
+                    <div style="font-size:.9rem;color:#6b7280">الوقت المستغرق</div>
+                </div>
+            </div>
+            ${xpCoinsHtml}
+            ${badgesHtml}
+            ${wrongCount>0?`<div style="width:100%;max-width:900px;text-align:right;margin-bottom:12px;">
+                <h4 style="margin:0 0 8px 0;color:#1f2937">أسئلة تحتاج مراجعة</h4>
+                ${wrongListHtml}
+            </div>`:''}
+            <div style="display:flex;gap:10px;margin-top:10px;">
+                <button onclick="location.reload()" class="next-btn">🔄 إعادة</button>
+                <a href="quiz.html?subject=${getSubjectKey()}" class="card-btn">📂 خروج</a>
+            </div>
+        `;
+        if (saveResp && saveResp.newBadge) {
+            const m = document.getElementById('badge-modal');
+            const closeBtn = document.getElementById('badge-modal-close');
+            const okBtn = document.getElementById('badge-modal-ok');
+            m.style.display = 'block';
+            closeBtn.onclick = () => { m.style.display = 'none'; };
+            okBtn.onclick = () => { m.style.display = 'none'; };
+        }
+        if (percent >= 85) {
+            const colors = ['#ffd700','#10b981','#3b82f6','#f59e0b','#8b5cf6'];
+            for (let i=0; i<60; i++) {
+                const c = document.createElement('div');
+                c.className = 'confetti';
+                c.style.left = Math.random()*100+'vw';
+                c.style.backgroundColor = colors[Math.floor(Math.random()*colors.length)];
+                c.style.animationDelay = (Math.random()*0.8)+'s';
+                c.style.transform = `rotate(${Math.random()*360}deg)`;
+                document.body.appendChild(c);
+                setTimeout(()=>{ if(c.parentNode) c.parentNode.removeChild(c); }, 3500);
+            }
+        }
     }
     loadQ();
 }
