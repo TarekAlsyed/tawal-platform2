@@ -172,6 +172,8 @@ function initializeDashboard() {
     loadAllData();
     // تحديث البيانات كل 30 ثانية
     setInterval(() => { fetchMessages(); fetchLogs(); fetchActivityLogs(); }, 30000);
+    renderAnalyticsSection();
+    renderGamificationSection();
 }
 
 function addLogoutButton() {
@@ -663,6 +665,136 @@ function initTheme() {
             localStorage.setItem('admin_theme', isDark ? 'dark' : 'light');
         };
     }
+}
+
+// =================================================================
+// 6. التحليل الذكي والتلعيب (Analytics + Gamification)
+// =================================================================
+function renderAnalyticsSection() {
+    const el = document.getElementById('analytics-container');
+    if (!el) return;
+    const data = {
+        score: 85, totalQuestions: 50, correctAnswers: 42,
+        timeSpent: '18:34', avgTimePerQuestion: '22s',
+        improvement: 12, performance: { speed: 78, accuracy: 84, consistency: 92 },
+        newBadges: [{ name:'النجم الساطع', icon:'⭐', description:'+85% ثلاث مرات' }, { name:'سريع البديهة', icon:'⚡', description:'وقت قياسي' }],
+        recommendations: [
+            { type: 'focus', text: 'ركز على "المساقط الجغرافية"' },
+            { type: 'practice', text: 'حل 10 أسئلة إضافية في "تحليل الشبكات"' },
+            { type: 'review', text: 'راجع الأسئلة الخاطئة' }
+        ]
+    };
+    const grade = (s)=> s>=90?'A+':s>=85?'A':s>=80?'B+':s>=75?'B':s>=70?'C+':s>=65?'C':'D';
+    const gradeColor = (g)=>({ 'A+':'#10b981','A':'#059669','B+':'#3b82f6','B':'#2563eb','C+':'#f59e0b','C':'#d97706','D':'#ef4444' }[g]||'#667eea');
+    const g = grade(data.score); const gColor = gradeColor(g);
+    el.innerHTML = `
+      <div style="text-align:center; margin-bottom:20px;">
+        <div style="font-size:3rem;font-weight:800; background:linear-gradient(135deg,#667eea,#764ba2); -webkit-background-clip:text; -webkit-text-fill-color:transparent;">${data.score}%</div>
+        <div style="display:inline-block;padding:.4rem 1rem;background:${gColor};color:#fff;border-radius:999px;font-weight:700;">${g}</div>
+        ${data.improvement>0?`<div style="margin-top:10px;color:#10b981;font-weight:600;">تحسنت بنسبة ${data.improvement}% عن المرة السابقة</div>`:''}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;">
+        ${[
+          {label:'الإجابات الصحيحة',value:`${data.correctAnswers}/${data.totalQuestions}`,color:'#10b981'},
+          {label:'الوقت المستغرق',value:data.timeSpent,color:'#3b82f6'},
+          {label:'متوسط الوقت/سؤال',value:data.avgTimePerQuestion,color:'#8b5cf6'}
+        ].map(stat=>`
+          <div style="background:${stat.color}10;border:2px solid ${stat.color}30;border-radius:12px;padding:14px;text-align:center">
+            <div style="font-size:1.4rem;color:${stat.color};font-weight:700;">${stat.value}</div>
+            <div style="font-size:.9rem;color:#6b7280;">${stat.label}</div>
+          </div>`).join('')}
+      </div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-bottom:16px;">
+        ${Object.entries(data.performance).map(([k,v])=>{
+          const labels={speed:'السرعة',accuracy:'الدقة',consistency:'الثبات'};
+          const colors={speed:'#3b82f6',accuracy:'#10b981',consistency:'#8b5cf6'};
+          return `
+            <div>
+              <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                <span style="font-weight:600;color:#4b5563">${labels[k]}</span>
+                <span style="font-weight:700;color:${colors[k]}">${v}%</span>
+              </div>
+              <div style="height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden">
+                <div style="width:${v}%;height:100%;background:${colors[k]};border-radius:999px"></div>
+              </div>
+            </div>`;
+        }).join('')}
+      </div>
+      ${data.newBadges.length?`
+        <div style="background:linear-gradient(135deg,#fef3c7,#fde68a);border-radius:12px;padding:14px;margin-bottom:12px;">
+          <h4 style="margin:0 0 8px 0;color:#92400e">🎉 إنجازات جديدة!</h4>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;">
+            ${data.newBadges.map(b=>`<div style="background:#fff;padding:10px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.1);display:flex;gap:8px;align-items:center;"><span style="font-size:1.4rem">${b.icon}</span><div><div style="font-weight:700;color:#92400e">${b.name}</div><div style="font-size:.85rem;color:#78350f">${b.description}</div></div></div>`).join('')}
+          </div>
+        </div>`:''}
+      <div>
+        <h4 style="margin:0 0 8px 0;color:#1f2937">💡 توصيات ذكية</h4>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          ${data.recommendations.map(r=>`<div style="background:#f3f4f6;padding:12px;border-radius:10px;border-left:4px solid #667eea;color:#4b5563">${r.text}</div>`).join('')}
+        </div>
+      </div>
+    `;
+}
+
+function renderGamificationSection() {
+    const el = document.getElementById('gamification-container');
+    if (!el) return;
+    const user = {
+        level: 12, xp: 2450, xpToNextLevel: 3000, coins: 1850, streak: 7, totalPoints: 15600, rank: 'ذهبي',
+        badges: [
+            { name:'البداية القوية', icon:'🚀', unlocked:true },
+            { name:'الماراثوني', icon:'🏃', unlocked:true, description:'أنهِ 10 اختبارات متتالية' },
+            { name:'المثابر', icon:'💪', unlocked:true, description:'سجل دخول 7 أيام متتالية' },
+            { name:'العبقري', icon:'🧠', unlocked:true, description:'احصل على 100% في 3 اختبارات' }
+        ],
+        challenges: [{ name:'تحدي الأسبوع', description:'حل 5 اختبارات بنسبة +80%', progress:3, total:5, reward:500, timeLeft:'4 أيام' }],
+        leaderboard: [
+            { rank:1, name:'أحمد محمد', avatar:'👨‍🎓', points:25600, level:18 },
+            { rank:2, name:'فاطمة علي', avatar:'👩‍🎓', points:23400, level:17 },
+            { rank:3, name:'أنت', avatar:'🎯', points:15600, level:12, highlight:true }
+        ]
+    };
+    const xpPct = Math.round((user.xp / user.xpToNextLevel) * 100);
+    el.innerHTML = `
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:14px;flex-wrap:wrap;">
+        <div style="width:80px;height:80px;border-radius:50%;background:#ffd700;display:flex;align-items:center;justify-content:center;color:#000;font-weight:bold;">${user.level}</div>
+        <div style="flex:1;min-width:220px;">
+          <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+            <span>XP: ${user.xp}/${user.xpToNextLevel}</span><span>Rank: ${user.rank}</span>
+          </div>
+          <div style="height:12px;background:#e5e7eb;border-radius:999px;overflow:hidden"><div style="width:${xpPct}%;height:100%;background:linear-gradient(135deg,#667eea,#764ba2)"></div></div>
+        </div>
+        <div style="min-width:160px">
+          <div>عملات: <strong>${user.coins}</strong></div>
+          <div>سلسلة الأيام: <strong>${user.streak}</strong></div>
+        </div>
+      </div>
+      <h4 style="margin:10px 0">🏅 الأوسمة</h4>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;">
+        ${user.badges.map(b=>`<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;"><span style="font-size:1.4rem">${b.icon}</span><div><div style="font-weight:700">${b.name}</div>${b.description?`<div style="font-size:.85rem;color:#6b7280">${b.description}</div>`:''}</div></div>`).join('')}
+      </div>
+      <h4 style="margin:10px 0">🔥 التحديات</h4>
+      ${user.challenges.map(c=>`
+        <div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:10px;">
+          <div style="display:flex;justify-content:space-between;align-items:center;">
+            <div>
+              <div style="font-weight:700">${c.name}</div>
+              <div style="font-size:.9rem;color:#6b7280">${c.description}</div>
+            </div>
+            <div style="min-width:140px;text-align:right">الزمن: ${c.timeLeft}</div>
+          </div>
+          <div style="height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden;margin-top:8px;">
+            <div style="width:${Math.round((c.progress/c.total)*100)}%;height:100%;background:#10b981"></div>
+          </div>
+          <div style="margin-top:6px;color:#6b7280">المكافأة: ${c.reward} نقطة</div>
+        </div>`).join('')}
+      <h4 style="margin:10px 0">🏆 لوحة الصدارة</h4>
+      <div class="admin-table-container">
+        <table class="admin-table"><thead><tr><th>#</th><th>الاسم</th><th>المستوى</th><th>النقاط</th></tr></thead><tbody>
+          ${user.leaderboard.map(r=>`<tr style="${r.highlight?'background:#f3f4f6':''}"><td>${r.rank}</td><td>${r.avatar} ${r.name}</td><td>${r.level}</td><td>${r.points}</td></tr>`).join('')}
+        </tbody></table>
+      </div>
+    `;
 }
 
 function setupGlobalSearch() {
