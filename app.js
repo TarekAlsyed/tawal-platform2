@@ -461,11 +461,15 @@ async function initDashboardPage() {
     if(!CURRENT_STUDENT_ID) return; 
     showLoading(c);
     try {
-        const [statsRes, resultsRes] = await Promise.all([ 
+        const [statsRes, resultsRes, groupsRes, myGroupsRes] = await Promise.all([ 
             apiRequest(`/students/${CURRENT_STUDENT_ID}/stats`), 
-            apiRequest(`/students/${CURRENT_STUDENT_ID}/results`) 
+            apiRequest(`/students/${CURRENT_STUDENT_ID}/results`),
+            apiRequest(`/groups`),
+            apiRequest(`/students/${CURRENT_STUDENT_ID}/groups`)
         ]);
         const stats = statsRes ? await statsRes.json() : {};
+        const groups = groupsRes ? await groupsRes.json() : [];
+        const myGroups = myGroupsRes ? await myGroupsRes.json() : [];
         let html = `<div class="dashboard-header" style="margin-bottom:2rem"><h2>أهلاً ${USER_DATA ? USER_DATA.name : 'يا بطل'} 👋</h2></div>`;
         html += `<div class="dashboard-summary-grid">
             <div class="summary-box"><p class="summary-box-label">الاختبارات</p><p class="summary-box-value">${stats.totalQuizzes||0}</p></div>
@@ -481,8 +485,49 @@ async function initDashboardPage() {
             <p id="msg-status" style="margin-top:5px; font-size:0.9rem;"></p>
         </div>`;
         html += `<div class="subject-card" style="margin-top:20px;"><h3>💬 الرسائل السابقة</h3><div id="my-messages-list" style="max-height:300px; overflow-y:auto; padding:10px;">جاري التحميل...</div></div>`;
+        const myGroupsHtml = (myGroups && myGroups.length) ? myGroups.map(g => `
+            <div style="padding:10px;border:1px solid var(--border-color);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-weight:700">${g.name}</div>
+                    <div style="font-size:.85rem;color:#6b7280">${g.description||''}</div>
+                    <div style="font-size:.8rem;color:#9ca3af">نقاطك: ${g.points||0} • نقاط المجموعة: ${g.total_points||0}</div>
+                </div>
+                <div style="display:flex;gap:8px;">
+                    <a href="javascript:void(0)" onclick="window.viewGroup(${g.id})" class="card-btn">عرض</a>
+                    <button onclick="window.leaveGroup(${g.id})" class="card-btn" style="background:var(--color-incorrect);color:#fff;">مغادرة</button>
+                </div>
+            </div>
+        `).join('') : '<p class="placeholder">لم تنضم لأي مجموعة بعد.</p>';
+        const allGroupsHtml = (groups && groups.length) ? groups.map(g => `
+            <div style="padding:10px;border:1px solid var(--border-color);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
+                <div>
+                    <div style="font-weight:700">${g.name}</div>
+                    <div style="font-size:.85rem;color:#6b7280">${g.description||''}</div>
+                    <div style="font-size:.8rem;color:#9ca3af">الأعضاء: ${g.members_count||0} • النقاط: ${g.total_points||0}</div>
+                </div>
+                <div>
+                    <button onclick="window.joinGroup(${g.id})" class="card-btn">انضمام</button>
+                </div>
+            </div>
+        `).join('') : '<p class="placeholder">لا توجد مجموعات حتى الآن.</p>';
+        html += `<div class="subject-card" style="margin-top:20px;">
+            <h3>👥 مجموعاتي</h3>
+            <div id="my-groups-container" style="display:flex;flex-direction:column;gap:10px;">${myGroupsHtml}</div>
+        </div>`;
+        html += `<div class="subject-card" style="margin-top:20px;">
+            <h3>🏫 كل المجموعات</h3>
+            <div id="groups-container" style="display:flex;flex-direction:column;gap:10px;">${allGroupsHtml}</div>
+            <div style="margin-top:12px;border-top:1px solid var(--border-color);padding-top:12px;">
+                <h4 style="margin:0 0 8px 0;">➕ إنشاء مجموعة</h4>
+                <input id="group-name" type="text" placeholder="اسم المجموعة" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin-bottom:8px;">
+                <textarea id="group-desc" rows="2" placeholder="وصف مختصر" style="width:100%;padding:10px;border:1px solid #ddd;border-radius:8px;margin-bottom:8px;"></textarea>
+                <button id="create-group-btn" class="card-btn">إنشاء</button>
+                <p id="group-status" style="font-size:.9rem;margin-top:6px;"></p>
+            </div>
+        </div>`;
         c.innerHTML = html;
         setupMessaging();
+        setupGroups();
     } catch(e) { c.innerHTML='<p>فشل تحميل البيانات.</p>'; }
 }
 
@@ -519,6 +564,97 @@ async function setupMessaging() {
     refreshMessages();
 }
 
+function setupGroups() {
+    const btn = $('create-group-btn');
+    const nameInp = $('group-name');
+    const descInp = $('group-desc');
+    const status = $('group-status');
+    if (btn) {
+        btn.onclick = async () => {
+            const name = (nameInp && nameInp.value.trim()) || '';
+            const description = (descInp && descInp.value.trim()) || '';
+            if (!name) return;
+            btn.disabled = true; btn.innerText = 'جاري الإنشاء...';
+            try {
+                const res = await apiRequest('/groups', { method: 'POST', body: JSON.stringify({ name, description, studentId: CURRENT_STUDENT_ID }) });
+                if (res && res.ok) {
+                    status.innerText = 'تم الإنشاء';
+                    await initDashboardPage();
+                } else {
+                    status.innerText = 'فشل الإنشاء';
+                }
+            } catch { status.innerText = 'خطأ في الاتصال'; }
+            finally { btn.disabled = false; btn.innerText = 'إنشاء'; setTimeout(()=>status.innerText='',3000); }
+        };
+    }
+    window.joinGroup = async (gid) => {
+        try {
+            const res = await apiRequest(`/groups/${gid}/join`, { method: 'POST', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID }) });
+            if (res && res.ok) await initDashboardPage();
+        } catch {}
+    };
+    window.leaveGroup = async (gid) => {
+        try {
+            const res = await apiRequest(`/groups/${gid}/leave`, { method: 'DELETE', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID }) });
+            if (res && res.ok) await initDashboardPage();
+        } catch {}
+    };
+    window.viewGroup = async (gid) => {
+        try {
+            const [postsRes, lbRes] = await Promise.all([
+                apiRequest(`/groups/${gid}/posts`),
+                apiRequest(`/groups/${gid}/leaderboard`)
+            ]);
+            const posts = postsRes ? await postsRes.json() : [];
+            const lb = lbRes ? await lbRes.json() : [];
+            const container = $('my-groups-container');
+            if (container) {
+                const postsHtml = posts.length ? posts.map(p => `
+                    <div style="padding:10px;border:1px solid var(--border-color);border-radius:8px;">
+                        <div style="font-weight:700">${p.author||'طالب'}</div>
+                        <div style="font-size:.95rem;color:#374151">${p.content}</div>
+                        <div style="font-size:.8rem;color:#9ca3af">${formatDate(p.created_at)}</div>
+                    </div>
+                `).join('') : '<p class="placeholder">لا توجد منشورات.</p>';
+                const lbHtml = lb.length ? `<table class="admin-table" style="width:100%;"><thead><tr><th>الطالب</th><th>النقاط</th></tr></thead><tbody>${
+                    lb.map(r => `<tr><td>${r.name||'طالب'}</td><td>${r.points||0}</td></tr>`).join('')
+                }</tbody></table>` : '<p class="placeholder">لا توجد نتائج.</p>';
+                const postComposer = `
+                    <div style="display:flex;gap:8px;margin-top:8px;">
+                        <input id="post-content" type="text" placeholder="اكتب منشوراً..." style="flex:1;padding:8px;border:1px solid #ddd;border-radius:8px;">
+                        <button id="post-send" class="card-btn">نشر</button>
+                    </div>
+                `;
+                container.innerHTML = `
+                    <div class="subject-card" style="margin-top:10px;">
+                        <h3>منشورات المجموعة</h3>
+                        <div>${postsHtml}</div>
+                        ${postComposer}
+                        <div id="post-status" style="font-size:.9rem;margin-top:6px;"></div>
+                        <h3 style="margin-top:16px;">لوحة نقاط الأعضاء</h3>
+                        <div>${lbHtml}</div>
+                    </div>
+                `;
+                const postBtn = $('post-send');
+                const postInp = $('post-content');
+                const pStatus = $('post-status');
+                if (postBtn) {
+                    postBtn.onclick = async () => {
+                        const content = (postInp && postInp.value.trim()) || '';
+                        if (!content) return;
+                        postBtn.disabled = true; postBtn.innerText = 'جاري النشر...';
+                        try {
+                            const res = await apiRequest(`/groups/${gid}/posts`, { method: 'POST', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID, content }) });
+                            if (res && res.ok) { pStatus.innerText = 'تم النشر'; await window.viewGroup(gid); }
+                            else pStatus.innerText = 'فشل النشر';
+                        } catch { pStatus.innerText = 'خطأ في الاتصال'; }
+                        finally { postBtn.disabled = false; postBtn.innerText = 'نشر'; setTimeout(()=>pStatus.innerText='',3000); }
+                    };
+                }
+            }
+        } catch {}
+    };
+}
 // =================================================================
 // 8. الملخصات (Summary)
 // =================================================================
@@ -659,6 +795,15 @@ function runQuizEngine(questions, title, subjectId) {
                 saveResp = await r.json();
             } catch(e) {}
         }
+        const grade = (() => {
+            if (percent >= 90) return { letter: 'A+', color: '#10b981', label: 'ممتاز' };
+            if (percent >= 85) return { letter: 'A', color: '#059669', label: 'ممتاز' };
+            if (percent >= 80) return { letter: 'B+', color: '#3b82f6', label: 'جيد جداً' };
+            if (percent >= 75) return { letter: 'B', color: '#2563eb', label: 'جيد جداً' };
+            if (percent >= 70) return { letter: 'C+', color: '#f59e0b', label: 'جيد' };
+            if (percent >= 65) return { letter: 'C', color: '#d97706', label: 'جيد' };
+            return { letter: 'D', color: '#ef4444', label: 'مقبول' };
+        })();
         const badges = [];
         if (percent >= 90) badges.push({ icon: '⭐', name: 'النجم الساطع', desc: 'أكثر من 90%' });
         else if (percent >= 75) badges.push({ icon: '🏅', name: 'مثابر', desc: 'أكثر من 75%' });
@@ -703,10 +848,22 @@ function runQuizEngine(questions, title, subjectId) {
                     </div>
                 </div>`;
         })();
+        const diffBuckets = (() => {
+            const easy = perQuestionTimes.filter(t => t <= 15).length;
+            const med = perQuestionTimes.filter(t => t > 15 && t <= 30).length;
+            const hard = perQuestionTimes.filter(t => t > 30).length;
+            const total = Math.max(1, easy + med + hard);
+            return [
+                { label:'سهل', count: easy, color:'#10b981', pct: Math.round((easy/total)*100) },
+                { label:'متوسط', count: med, color:'#f59e0b', pct: Math.round((med/total)*100) },
+                { label:'صعب', count: hard, color:'#ef4444', pct: Math.round((hard/total)*100) }
+            ];
+        })();
         resDiv.innerHTML = `
             <div style="text-align:center;margin-bottom:16px;">
                 <div style="font-size:3rem;font-weight:800;background:var(--primary-gradient);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">${percent}%</div>
                 <div style="color:#6b7280;margin-top:6px;">النتيجة النهائية</div>
+                <div style="display:inline-block;padding:.4rem 1rem;background:${grade.color};color:#fff;border-radius:999px;font-weight:700;margin-top:8px;">${grade.letter} - ${grade.label}</div>
             </div>
             <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:16px;width:100%;max-width:900px;">
                 <div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:12px;padding:14px;text-align:center">
@@ -726,6 +883,22 @@ function runQuizEngine(questions, title, subjectId) {
                     <div style="font-size:.9rem;color:#6b7280">الوقت المستغرق</div>
                 </div>
             </div>
+            <div style="width:100%;max-width:900px;margin-bottom:16px;">
+                <h4 style="margin:0 0 8px 0;color:#1f2937">🎯 تحليل الصعوبة (مستند إلى زمن الإجابة)</h4>
+                <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;">
+                    ${diffBuckets.map(d=>`
+                        <div>
+                            <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+                                <span style="font-weight:600;color:#4b5563">${d.label}</span>
+                                <span style="font-weight:700;color:${d.color}">${d.pct}% (${d.count})</span>
+                            </div>
+                            <div style="height:10px;background:#e5e7eb;border-radius:999px;overflow:hidden">
+                                <div style="width:${d.pct}%;height:100%;background:${d.color};border-radius:999px"></div>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
             ${xpCoinsHtml}
             ${badgesHtml}
             ${wrongCount>0?`<div style="width:100%;max-width:900px;text-align:right;margin-bottom:12px;">
@@ -735,8 +908,37 @@ function runQuizEngine(questions, title, subjectId) {
             <div style="display:flex;gap:10px;margin-top:10px;">
                 <button onclick="location.reload()" class="next-btn">🔄 إعادة</button>
                 <a href="quiz.html?subject=${getSubjectKey()}" class="card-btn">📂 خروج</a>
+                <button id="export-pdf-btn" class="next-btn">📄 تصدير PDF</button>
             </div>
         `;
+        const exportBtn = document.getElementById('export-pdf-btn');
+        if (exportBtn) exportBtn.onclick = () => { window.print(); };
+        const aiBtn = document.getElementById('ai-help-btn');
+        const aiModal = document.getElementById('ai-modal');
+        const aiClose = document.getElementById('ai-modal-close');
+        const aiOk = document.getElementById('ai-modal-ok');
+        if (aiBtn && aiModal && aiClose && aiOk) {
+            aiBtn.onclick = async () => {
+                aiModal.style.display = 'block';
+                const content = document.getElementById('ai-content');
+                content.innerHTML = '<div class="spinner">جاري التحليل...</div>';
+                const studentData = { score: percent, totalQuestions: questions.length, correctAnswers: correct, wrongAnswers: incorrectList, timeBreakdown: { totalSeconds, perQuestion: perQuestionTimes } };
+                try {
+                    const r = await apiRequest('/ai/recommendations', { method: 'POST', body: JSON.stringify({ studentData }) });
+                    const data = r ? await r.json() : null;
+                    const recs = (data && data.recommendations) ? data.recommendations : [];
+                    content.innerHTML = recs.length ? `
+                        <div>
+                            <h4 style="margin:0 0 8px 0;color:#1f2937">توصيات ذكية</h4>
+                            <div style="display:flex;flex-direction:column;gap:8px;">
+                                ${recs.map(r=>`<div style="background:#f3f4f6;padding:12px;border-radius:10px;border-left:4px solid #667eea;color:#4b5563">${r.text}</div>`).join('')}
+                            </div>
+                        </div>` : '<p>لا توجد توصيات حالياً.</p>';
+                } catch(e) { content.innerHTML = '<p>تعذر الحصول على توصيات.</p>'; }
+            };
+            aiClose.onclick = () => { aiModal.style.display = 'none'; };
+            aiOk.onclick = () => { aiModal.style.display = 'none'; };
+        }
         if (saveResp && saveResp.newBadge) {
             const m = document.getElementById('badge-modal');
             const closeBtn = document.getElementById('badge-modal-close');

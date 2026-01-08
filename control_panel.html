@@ -434,6 +434,10 @@
                     <i data-lucide="activity"></i>
                     <span>سجلات النشاط</span>
                 </a>
+                <a href="#content-management-section" class="nav-item">
+                    <i data-lucide="folder-open"></i>
+                    <span>إدارة المحتوى</span>
+                </a>
                 <div style="height: 1px; background: var(--border-color); margin: 10px 0;"></div>
                 <a href="#" id="logout-btn" class="nav-item" style="color: var(--danger);">
                     <i data-lucide="log-out"></i>
@@ -554,7 +558,48 @@
                             </div>
                         </div>
 
-
+                        <div id="content-management-section" class="admin-card">
+                            <div class="card-header">
+                                <h3><i data-lucide="folder-open"></i> إدارة المحتوى والمواد الدراسية</h3>
+                                <div>
+                                    <button class="btn btn-green" onclick="openAddSubjectModal()">+ إضافة مادة</button>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div style="display:flex; gap:10px; margin-bottom:12px;">
+                                    <button class="btn" id="tab-subjects-btn" onclick="setCMSTab('subjects')" style="background:#eef2ff; color:#4e54c8;">المواد</button>
+                                    <button class="btn" id="tab-files-btn" onclick="setCMSTab('files')" style="background:#f3f4f6; color:#4b5563;">الملفات والصور</button>
+                                    <button class="btn" id="tab-questions-btn" onclick="setCMSTab('questions')" style="background:#f3f4f6; color:#4b5563;">بنك الأسئلة</button>
+                                </div>
+                                <div id="cms-subjects-tab">
+                                    <div id="subjects-list"><div class="spinner">جاري التحميل...</div></div>
+                                </div>
+                                <div id="cms-files-tab" style="display:none;">
+                                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                                        <select id="files-subject-select" class="btn" style="background:#f9fafb; color:#374151;"></select>
+                                        <button class="btn btn-green" onclick="openUploadFileModal()">رفع ملف</button>
+                                        <button class="btn btn-green" onclick="openUploadImageModal()">رفع صورة</button>
+                                    </div>
+                                    <h4 style="margin:8px 0;">الملفات</h4>
+                                    <div id="files-list"><div class="spinner">جاري التحميل...</div></div>
+                                    <h4 style="margin:16px 0 8px 0;">الصور</h4>
+                                    <div id="images-list"><div class="spinner">جاري التحميل...</div></div>
+                                </div>
+                                <div id="cms-questions-tab" style="display:none;">
+                                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
+                                        <select id="questions-subject-select" class="btn" style="background:#f9fafb; color:#374151;"></select>
+                                        <select id="questions-level-select" class="btn" style="background:#f9fafb; color:#374151;">
+                                            <option value="">الكل</option>
+                                            <option value="1">المستوى 1</option>
+                                            <option value="2">المستوى 2</option>
+                                            <option value="3">المستوى 3</option>
+                                        </select>
+                                        <button class="btn btn-green" onclick="openAddQuestionModal()">+ إضافة سؤال</button>
+                                    </div>
+                                    <div id="questions-list"><div class="spinner">جاري التحميل...</div></div>
+                                </div>
+                            </div>
+                        </div>
 
                     </div>
                 </div> </div> </main>
@@ -586,10 +631,169 @@
                 
                 <h4 style="color: var(--accent-primary);">🎮 Gamification Hub</h4>
                 <div id="modal-gamification-container"><div class="spinner">جاري التحميل...</div></div>
+                
+                <hr style="border: 0; border-top: 1px solid var(--border-color); margin: 20px 0;">
+                
+                <h4 style="color: var(--accent-primary);">🏆 لوحة الصدارة</h4>
+                <div id="modal-leaderboard-container"><div class="spinner">جاري التحميل...</div></div>
             </div>
         </div>
     </div>
 
+    <div id="add-subject-modal" class="admin-modal">
+        <div class="admin-modal-content">
+            <span class="admin-modal-close" onclick="closeAddSubjectModal()">&times;</span>
+            <div class="modal-header-custom">
+                <h3 style="margin:0;">إضافة/تعديل مادة</h3>
+            </div>
+            <div class="modal-body-custom">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">المعرف</label>
+                        <input type="text" id="subject-id-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">العنوان</label>
+                        <input type="text" id="subject-title-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">الوصف</label>
+                        <textarea id="subject-desc-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></textarea>
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">أيقونة SVG (اختياري)</label>
+                        <textarea id="subject-icon-svg-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;" placeholder="<svg>..."></textarea>
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button class="btn btn-green" onclick="submitAddSubject()">حفظ</button>
+                    <button class="btn" onclick="closeAddSubjectModal()" style="background:#f3f4f6; color:#4b5563;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="upload-file-modal" class="admin-modal">
+        <div class="admin-modal-content">
+            <span class="admin-modal-close" onclick="closeUploadFileModal()">&times;</span>
+            <div class="modal-header-custom">
+                <h3 style="margin:0;">رفع ملف PDF</h3>
+            </div>
+            <div class="modal-body-custom">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">المادة</label>
+                        <select id="upload-file-subject-select" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></select>
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <input type="file" id="upload-file-input" accept=".pdf,.docx" style="width:100%;">
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">اسم الملف</label>
+                        <input type="text" id="upload-file-name-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button class="btn btn-green" onclick="submitUploadFile()">رفع</button>
+                    <button class="btn" onclick="closeUploadFileModal()" style="background:#f3f4f6; color:#4b5563;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="upload-image-modal" class="admin-modal">
+        <div class="admin-modal-content">
+            <span class="admin-modal-close" onclick="closeUploadImageModal()">&times;</span>
+            <div class="modal-header-custom">
+                <h3 style="margin:0;">رفع صورة ملخص</h3>
+            </div>
+            <div class="modal-body-custom">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">المادة</label>
+                        <select id="upload-image-subject-select" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></select>
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <input type="file" id="upload-image-input" accept=".jpg,.jpeg,.png,.svg" style="width:100%;">
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">تعليق الصورة</label>
+                        <input type="text" id="upload-image-caption-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button class="btn btn-green" onclick="submitUploadImage()">رفع</button>
+                    <button class="btn" onclick="closeUploadImageModal()" style="background:#f3f4f6; color:#4b5563;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="question-editor-modal" class="admin-modal">
+        <div class="admin-modal-content">
+            <span class="admin-modal-close" onclick="closeQuestionEditorModal()">&times;</span>
+            <div class="modal-header-custom">
+                <h3 id="question-editor-title" style="margin:0;">إضافة سؤال</h3>
+            </div>
+            <div class="modal-body-custom">
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px;">
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">المادة</label>
+                        <select id="question-subject-select" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">المستوى</label>
+                        <select id="question-level-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                            <option value="1">1</option>
+                            <option value="2">2</option>
+                            <option value="3">3</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">النوع</label>
+                        <select id="question-type-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                            <option value="mc">اختيارات متعددة</option>
+                            <option value="tf">صح/خطأ</option>
+                        </select>
+                    </div>
+                    <div style="grid-column:1 / -1;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">نص السؤال</label>
+                        <textarea id="question-text-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;"></textarea>
+                    </div>
+                    <div id="mc-options-wrapper" style="grid-column:1 / -1; display:none;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">الخيارات</label>
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+                            <input type="text" id="opt-0" placeholder="خيار 1" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                            <input type="text" id="opt-1" placeholder="خيار 2" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                            <input type="text" id="opt-2" placeholder="خيار 3" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                            <input type="text" id="opt-3" placeholder="خيار 4" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                        </div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280; margin-top:8px;">الإجابة الصحيحة (رقم الخيار)</label>
+                        <input type="number" id="answer-index-input" min="0" max="3" style="padding:10px; border:1px solid #e5e7eb; border-radius:10px; width:100px;">
+                    </div>
+                    <div id="tf-answer-wrapper" style="grid-column:1 / -1; display:none;">
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">الإجابة الصحيحة</label>
+                        <select id="tf-answer-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                            <option value="true">صح</option>
+                            <option value="false">خطأ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">الموضوع</label>
+                        <input type="text" id="question-topic-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                    </div>
+                    <div>
+                        <label style="display:block; font-size:.85rem; color:#6b7280;">الصعوبة</label>
+                        <input type="text" id="question-difficulty-input" style="width:100%; padding:10px; border:1px solid #e5e7eb; border-radius:10px;">
+                    </div>
+                </div>
+                <div style="display:flex; gap:10px; margin-top:12px;">
+                    <button class="btn btn-green" onclick="submitQuestion()">حفظ</button>
+                    <button class="btn" onclick="closeQuestionEditorModal()" style="background:#f3f4f6; color:#4b5563;">إلغاء</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <script>
         // تفعيل الأيقونات
         lucide.createIcons();

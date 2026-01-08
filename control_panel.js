@@ -101,6 +101,24 @@ document.addEventListener('DOMContentLoaded', () => {
     window.deleteMsg = deleteMsg;
     window.toggleLock = toggleLock;
     window.exportToCSV = exportToCSV;
+    window.setCMSTab = setCMSTab;
+    window.openAddSubjectModal = openAddSubjectModal;
+    window.closeAddSubjectModal = closeAddSubjectModal;
+    window.submitAddSubject = submitAddSubject;
+    window.editSubject = editSubject;
+    window.deleteSubject = deleteSubject;
+    window.uploadSubjectIcon = uploadSubjectIcon;
+    window.openUploadFileModal = openUploadFileModal;
+    window.closeUploadFileModal = closeUploadFileModal;
+    window.submitUploadFile = submitUploadFile;
+    window.openUploadImageModal = openUploadImageModal;
+    window.closeUploadImageModal = closeUploadImageModal;
+    window.submitUploadImage = submitUploadImage;
+    window.openAddQuestionModal = openAddQuestionModal;
+    window.closeQuestionEditorModal = closeQuestionEditorModal;
+    window.submitQuestion = submitQuestion;
+    window.editQuestion = editQuestion;
+    window.deleteQuestion = deleteQuestion;
 
     if (typeof lucide !== 'undefined') {
         lucide.createIcons();
@@ -116,6 +134,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const closeBtn = document.getElementById('modal-close-btn');
     if (closeBtn) closeBtn.onclick = () => { modal.style.display = 'none'; };
     window.onclick = (event) => { if (event.target === modal) modal.style.display = 'none'; };
+    
+    setTimeout(() => { try { loadCMSSubjects(); } catch {} }, 100);
 });
 
 function showLoginScreen() {
@@ -206,6 +226,363 @@ async function loadAllData() {
 }
 
 // =================================================================
+// CMS - Content Management
+// =================================================================
+let CMS_CURRENT_TAB = 'subjects';
+let CMS_EDITING_SUBJECT_ID = null;
+let CMS_EDITING_QUESTION_ID = null;
+let CMS_SUBJECTS_CACHE = [];
+
+function setCMSTab(tab) {
+    CMS_CURRENT_TAB = tab;
+    const sTab = document.getElementById('cms-subjects-tab');
+    const fTab = document.getElementById('cms-files-tab');
+    const qTab = document.getElementById('cms-questions-tab');
+    const btnS = document.getElementById('tab-subjects-btn');
+    const btnF = document.getElementById('tab-files-btn');
+    const btnQ = document.getElementById('tab-questions-btn');
+    if (!sTab || !fTab || !qTab) return;
+    sTab.style.display = tab === 'subjects' ? 'block' : 'none';
+    fTab.style.display = tab === 'files' ? 'block' : 'none';
+    qTab.style.display = tab === 'questions' ? 'block' : 'none';
+    if (btnS) btnS.style.background = tab === 'subjects' ? '#eef2ff' : '#f3f4f6';
+    if (btnF) btnF.style.background = tab === 'files' ? '#eef2ff' : '#f3f4f6';
+    if (btnQ) btnQ.style.background = tab === 'questions' ? '#eef2ff' : '#f3f4f6';
+    if (tab === 'files') { 
+        populateSubjectSelects();
+        const subjSel = document.getElementById('files-subject-select');
+        if (subjSel) subjSel.onchange = () => { loadFilesList(); loadImagesList(); };
+        setTimeout(() => { loadFilesList(); loadImagesList(); }, 10);
+    }
+    if (tab === 'questions') { 
+        populateSubjectSelects(); 
+        const subjSel = document.getElementById('questions-subject-select');
+        const lvlSel = document.getElementById('questions-level-select');
+        if (subjSel) subjSel.onchange = loadQuestionsList;
+        if (lvlSel) lvlSel.onchange = loadQuestionsList;
+        setTimeout(loadQuestionsList, 10);
+    }
+}
+
+async function loadFilesList() {
+    const subjSel = document.getElementById('files-subject-select');
+    const list = document.getElementById('files-list');
+    if (!subjSel || !list) return;
+    const subj = subjSel.value;
+    list.innerHTML = '<div class="spinner">جاري التحميل...</div>';
+    const res = await secureFetch(`/admin/subjects/${subj}/files`);
+    if (!res) { list.innerHTML = '<p class="empty">تعذر جلب الملفات.</p>'; return; }
+    const files = await res.json();
+    list.innerHTML = (!files || !files.length) ? '<p class="empty">لا توجد ملفات.</p>' : `
+        <div class="admin-table-container">
+            <table class="admin-table">
+                <thead><tr><th>الاسم</th><th>الحجم</th><th>تاريخ</th><th>إجراءات</th></tr></thead>
+                <tbody>${
+                    files.map(f => `<tr>
+                        <td><a href="${f.file_path}" target="_blank">${f.file_name}</a></td>
+                        <td>${Math.round((f.file_size || 0)/1024)} KB</td>
+                        <td style="font-size:.85rem; color:#9ca3af;">${new Date(f.uploaded_at).toLocaleString('ar-EG')}</td>
+                        <td><button class="btn btn-red" onclick="deleteFile(${f.id})">حذف</button></td>
+                    </tr>`).join('')
+                }</tbody>
+            </table>
+        </div>
+    `;
+}
+
+async function loadImagesList() {
+    const subjSel = document.getElementById('files-subject-select');
+    const list = document.getElementById('images-list');
+    if (!subjSel || !list) return;
+    const subj = subjSel.value;
+    list.innerHTML = '<div class="spinner">جاري التحميل...</div>';
+    const res = await secureFetch(`/admin/subjects/${subj}/images`);
+    if (!res) { list.innerHTML = '<p class="empty">تعذر جلب الصور.</p>'; return; }
+    const imgs = await res.json();
+    list.innerHTML = (!imgs || !imgs.length) ? '<p class="empty">لا توجد صور.</p>' : `
+        <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
+            ${imgs.map(i => `
+                <div style="border:1px solid #e5e7eb; border-radius:10px; padding:8px; background:#fff;">
+                    <img src="${i.image_path}" alt="" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">
+                    <div style="font-size:.85rem; color:#6b7280; margin-top:6px;">${i.caption || ''}</div>
+                    <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
+                        <button class="btn btn-red" onclick="deleteImage(${i.id})">حذف</button>
+                    </div>
+                </div>
+            `).join('')}
+        </div>
+    `;
+}
+
+async function deleteFile(id) {
+    if (!confirm('حذف هذا الملف؟')) return;
+    const res = await secureFetch(`/admin/files/${id}`, { method: 'DELETE' });
+    if (res && res.ok) { showToast('تم الحذف'); loadFilesList(); } else showToast('فشل الحذف', 'error');
+}
+
+async function deleteImage(id) {
+    if (!confirm('حذف هذه الصورة؟')) return;
+    const res = await secureFetch(`/admin/images/${id}`, { method: 'DELETE' });
+    if (res && res.ok) { showToast('تم الحذف'); loadImagesList(); } else showToast('فشل الحذف', 'error');
+}
+
+async function loadCMSSubjects() {
+    const list = document.getElementById('subjects-list');
+    if (!list) return;
+    list.innerHTML = '<div class="spinner">جاري التحميل...</div>';
+    const res = await secureFetch('/admin/subjects');
+    if (!res) { list.innerHTML = '<p class="empty">تعذر جلب المواد.</p>'; return; }
+    const subjects = await res.json();
+    CMS_SUBJECTS_CACHE = Array.isArray(subjects) ? subjects : [];
+    list.innerHTML = CMS_SUBJECTS_CACHE.map(s => {
+        const icon = s.icon_type === 'image' ? (s.icon_data || '') : '';
+        const svg = s.icon_type === 'svg' ? (s.icon_data || '') : '';
+        const imgEl = icon ? `<img src="${icon}" alt="" style="width:40px; height:40px; border-radius:8px; object-fit:cover;">` : (svg ? `<div style="width:40px; height:40px;">${svg}</div>` : `<div style="width:40px; height:40px; background:#e5e7eb; border-radius:8px;"></div>`);
+        return `
+            <div style="display:flex; align-items:center; gap:12px; padding:10px; border:1px solid #e5e7eb; border-radius:12px; margin-bottom:8px; background:#fff;">
+                ${imgEl}
+                <div style="flex:1">
+                    <div style="font-weight:700">${s.title || s.id}</div>
+                    <div style="font-size:.85rem; color:#6b7280">${s.description || ''}</div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" style="background:#f3f4f6; color:#4b5563;" onclick="editSubject('${s.id}')">تعديل</button>
+                    <button class="btn btn-red" onclick="deleteSubject('${s.id}')">حذف</button>
+                </div>
+            </div>
+        `;
+    }).join('') || '<p class="empty">لا توجد مواد.</p>';
+    populateSubjectSelects();
+}
+
+function populateSubjectSelects() {
+    const selF = document.getElementById('files-subject-select');
+    const selQ = document.getElementById('questions-subject-select');
+    const selU1 = document.getElementById('upload-file-subject-select');
+    const selU2 = document.getElementById('upload-image-subject-select');
+    const selQm = document.getElementById('question-subject-select');
+    const options = CMS_SUBJECTS_CACHE.map(s => `<option value="${s.id}">${s.title || s.id}</option>`).join('');
+    if (selF) selF.innerHTML = options;
+    if (selQ) selQ.innerHTML = options;
+    if (selU1) selU1.innerHTML = options;
+    if (selU2) selU2.innerHTML = options;
+    if (selQm) selQm.innerHTML = options;
+}
+
+function openAddSubjectModal() {
+    CMS_EDITING_SUBJECT_ID = null;
+    const m = document.getElementById('add-subject-modal');
+    const id = document.getElementById('subject-id-input');
+    const t = document.getElementById('subject-title-input');
+    const d = document.getElementById('subject-desc-input');
+    const svg = document.getElementById('subject-icon-svg-input');
+    if (!m || !id || !t || !d || !svg) return;
+    id.value = '';
+    t.value = '';
+    d.value = '';
+    svg.value = '';
+    m.style.display = 'block';
+}
+
+function closeAddSubjectModal() {
+    const m = document.getElementById('add-subject-modal');
+    if (m) m.style.display = 'none';
+}
+
+async function submitAddSubject() {
+    const id = document.getElementById('subject-id-input')?.value?.trim();
+    const title = document.getElementById('subject-title-input')?.value?.trim();
+    const description = document.getElementById('subject-desc-input')?.value?.trim();
+    const svg = document.getElementById('subject-icon-svg-input')?.value?.trim();
+    if (!id || !title) { showToast('البيانات ناقصة', 'error'); return; }
+    const payload = { id, title, description, icon_type: svg ? 'svg' : 'svg', icon_data: svg || null };
+    if (!CMS_EDITING_SUBJECT_ID) {
+        const res = await secureFetch('/admin/subjects', { method: 'POST', body: JSON.stringify(payload) });
+        if (res && res.ok) { showToast('تمت الإضافة'); closeAddSubjectModal(); loadCMSSubjects(); } else showToast('فشل الإضافة', 'error');
+    } else {
+        const res = await secureFetch(`/admin/subjects/${CMS_EDITING_SUBJECT_ID}`, { method: 'PUT', body: JSON.stringify(payload) });
+        if (res && res.ok) { showToast('تم التعديل'); closeAddSubjectModal(); loadCMSSubjects(); } else showToast('فشل التعديل', 'error');
+    }
+}
+
+function editSubject(subjectId) {
+    const s = CMS_SUBJECTS_CACHE.find(x => x.id === subjectId);
+    if (!s) return;
+    CMS_EDITING_SUBJECT_ID = s.id;
+    const m = document.getElementById('add-subject-modal');
+    const id = document.getElementById('subject-id-input');
+    const t = document.getElementById('subject-title-input');
+    const d = document.getElementById('subject-desc-input');
+    const svg = document.getElementById('subject-icon-svg-input');
+    if (!m || !id || !t || !d || !svg) return;
+    id.value = s.id || '';
+    id.disabled = true;
+    t.value = s.title || '';
+    d.value = s.description || '';
+    svg.value = s.icon_type === 'svg' ? (s.icon_data || '') : '';
+    m.style.display = 'block';
+}
+
+async function deleteSubject(subjectId) {
+    if (!confirm('هل تريد حذف هذه المادة؟')) return;
+    const res = await secureFetch(`/admin/subjects/${subjectId}`, { method: 'DELETE' });
+    if (res && res.ok) { showToast('تم الحذف'); loadCMSSubjects(); } else showToast('فشل الحذف', 'error');
+}
+
+function uploadSubjectIcon(subjectId) {
+    showToast('ميزة رفع الأيقونة تتطلب إعداد التخزين', 'error');
+}
+
+function openUploadFileModal() {
+    const m = document.getElementById('upload-file-modal');
+    if (m) m.style.display = 'block';
+}
+function closeUploadFileModal() {
+    const m = document.getElementById('upload-file-modal');
+    if (m) m.style.display = 'none';
+}
+async function submitUploadFile() {
+    const subj = document.getElementById('upload-file-subject-select')?.value;
+    const file = document.getElementById('upload-file-input')?.files?.[0];
+    const name = document.getElementById('upload-file-name-input')?.value?.trim();
+    if (!subj || !file) { showToast('اختر مادة وملف', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64 = reader.result;
+        const res = await secureFetch(`/admin/subjects/${subj}/files-base64`, { method: 'POST', body: JSON.stringify({ file_name: name || file.name, data: base64, mime: file.type }) });
+        if (res && res.ok) { showToast('تم رفع الملف'); closeUploadFileModal(); loadFilesList(); } else showToast('فشل الرفع', 'error');
+    };
+    reader.readAsDataURL(file);
+}
+
+function openUploadImageModal() {
+    const m = document.getElementById('upload-image-modal');
+    if (m) m.style.display = 'block';
+}
+function closeUploadImageModal() {
+    const m = document.getElementById('upload-image-modal');
+    if (m) m.style.display = 'none';
+}
+async function submitUploadImage() {
+    const subj = document.getElementById('upload-image-subject-select')?.value;
+    const file = document.getElementById('upload-image-input')?.files?.[0];
+    const caption = document.getElementById('upload-image-caption-input')?.value?.trim();
+    if (!subj || !file) { showToast('اختر مادة وصورة', 'error'); return; }
+    const reader = new FileReader();
+    reader.onload = async () => {
+        const base64 = reader.result;
+        const res = await secureFetch(`/admin/subjects/${subj}/images-base64`, { method: 'POST', body: JSON.stringify({ caption, data: base64, mime: file.type }) });
+        if (res && res.ok) { showToast('تم رفع الصورة'); closeUploadImageModal(); loadImagesList(); } else showToast('فشل الرفع', 'error');
+    };
+    reader.readAsDataURL(file);
+}
+
+function openAddQuestionModal() {
+    CMS_EDITING_QUESTION_ID = null;
+    const m = document.getElementById('question-editor-modal');
+    const ttl = document.getElementById('question-editor-title');
+    const tSel = document.getElementById('question-type-input');
+    const mcW = document.getElementById('mc-options-wrapper');
+    const tfW = document.getElementById('tf-answer-wrapper');
+    const qt = document.getElementById('question-text-input');
+    const idx = document.getElementById('answer-index-input');
+    const tf = document.getElementById('tf-answer-input');
+    const topic = document.getElementById('question-topic-input');
+    const diff = document.getElementById('question-difficulty-input');
+    if (!m || !ttl || !tSel) return;
+    ttl.innerText = 'إضافة سؤال';
+    if (qt) qt.value = '';
+    if (idx) idx.value = '';
+    if (tf) tf.value = 'true';
+    if (topic) topic.value = '';
+    if (diff) diff.value = '';
+    tSel.onchange = () => {
+        const v = tSel.value;
+        if (mcW && tfW) {
+            mcW.style.display = v === 'mc' ? 'block' : 'none';
+            tfW.style.display = v === 'tf' ? 'block' : 'none';
+        }
+    };
+    tSel.dispatchEvent(new Event('change'));
+    m.style.display = 'block';
+}
+
+function closeQuestionEditorModal() {
+    const m = document.getElementById('question-editor-modal');
+    if (m) m.style.display = 'none';
+}
+
+async function submitQuestion() {
+    const subj = document.getElementById('question-subject-select')?.value;
+    const lvl = parseInt(document.getElementById('question-level-input')?.value || '1');
+    const type = document.getElementById('question-type-input')?.value;
+    const text = document.getElementById('question-text-input')?.value?.trim();
+    const topic = document.getElementById('question-topic-input')?.value?.trim();
+    const difficulty = document.getElementById('question-difficulty-input')?.value?.trim();
+    if (!subj || !type || !text) { showToast('البيانات ناقصة', 'error'); return; }
+    let payload = { level: lvl, type, question: text, difficulty, topic };
+    if (type === 'mc') {
+        const opts = [0,1,2,3].map(i => document.getElementById('opt-'+i)?.value || '').filter(x => x);
+        const ansIdx = parseInt(document.getElementById('answer-index-input')?.value || '0');
+        if (!opts.length || isNaN(ansIdx)) { showToast('أكمل الخيارات والإجابة', 'error'); return; }
+        payload.options = opts;
+        payload.answer = ansIdx;
+    } else {
+        const tf = document.getElementById('tf-answer-input')?.value;
+        payload.answer = tf === 'true';
+    }
+    if (!CMS_EDITING_QUESTION_ID) {
+        const res = await secureFetch(`/admin/subjects/${subj}/questions`, { method: 'POST', body: JSON.stringify(payload) });
+        if (res && res.ok) { showToast('تمت الإضافة'); closeQuestionEditorModal(); loadQuestionsList(); } else showToast('فشل الإضافة', 'error');
+    } else {
+        const res = await secureFetch(`/admin/questions/${CMS_EDITING_QUESTION_ID}`, { method: 'PUT', body: JSON.stringify(payload) });
+        if (res && res.ok) { showToast('تم التعديل'); closeQuestionEditorModal(); loadQuestionsList(); } else showToast('فشل التعديل', 'error');
+    }
+}
+
+async function loadQuestionsList() {
+    const subjSel = document.getElementById('questions-subject-select');
+    const lvlSel = document.getElementById('questions-level-select');
+    const list = document.getElementById('questions-list');
+    if (!subjSel || !lvlSel || !list) return;
+    const subj = subjSel.value;
+    const lvl = lvlSel.value;
+    list.innerHTML = '<div class="spinner">جاري التحميل...</div>';
+    let url = `/admin/subjects/${subj}/questions`;
+    if (lvl) url += `?level=${lvl}`;
+    const res = await secureFetch(url);
+    if (!res) { list.innerHTML = '<p class="empty">تعذر جلب الأسئلة.</p>'; return; }
+    const qs = await res.json();
+    list.innerHTML = (!qs || !qs.length) ? '<p class="empty">لا توجد أسئلة.</p>' : qs.map(q => `
+        <div style="border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:8px; background:#fff;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+                <div>
+                    <div style="font-weight:700">${q.question}</div>
+                    <div style="font-size:.85rem; color:#6b7280">المستوى: ${q.level} • النوع: ${q.type} • الموضوع: ${q.topic || '-'}</div>
+                </div>
+                <div style="display:flex; gap:8px;">
+                    <button class="btn" style="background:#f3f4f6; color:#4b5563;" onclick="editQuestion(${q.id})">تعديل</button>
+                    <button class="btn btn-red" onclick="deleteQuestion(${q.id})">حذف</button>
+                </div>
+            </div>
+        </div>
+    `).join('');
+}
+
+function editQuestion(qid) {
+    const list = document.getElementById('questions-list');
+    const items = Array.from(list.querySelectorAll('div'));
+    CMS_EDITING_QUESTION_ID = qid;
+    openAddQuestionModal();
+}
+
+async function deleteQuestion(qid) {
+    if (!confirm('هل تريد حذف هذا السؤال؟')) return;
+    const res = await secureFetch(`/admin/questions/${qid}`, { method: 'DELETE' });
+    if (res && res.ok) { showToast('تم الحذف'); loadQuestionsList(); } else showToast('فشل الحذف', 'error');
+}
+
+// =================================================================
 // 3. جلب البيانات (Data Fetching)
 // =================================================================
 
@@ -238,12 +615,22 @@ async function fetchStats() {
                 <div class="summary-val">${data.averageScore}%</div>
             </div>
         </div>
-        <div style="position: relative; height: 300px; width: 100%;" id="chart-wrapper-inner">
+        <div style="position: relative; height: 300px; width: 100%; margin-bottom:16px;" id="chart-wrapper-inner">
              <canvas id="mainStatsChart"></canvas>
+        </div>
+        <div style="position: relative; height: 300px; width: 100%;" id="prediction-wrapper">
+             <canvas id="predictionChart"></canvas>
         </div>`;
         
     if (typeof lucide !== 'undefined') lucide.createIcons();
-    if(typeof Chart !== 'undefined') setTimeout(() => renderCharts(data), 100);
+    if(typeof Chart !== 'undefined') {
+        setTimeout(() => renderCharts(data), 100);
+        try {
+            secureFetch('/admin/predictions').then(r => r ? r.json() : {}).then(pred => {
+                if (pred) renderPredictions(pred);
+            });
+        } catch {}
+    }
 }
 
 // ✅ المشكلة 1 و المشكلة المفقودة: إصلاح الأسماء وإضافة زر فك حظر الجهاز
@@ -396,17 +783,19 @@ window.showStudentDetails = async (studentId) => {
     const modalResults = document.getElementById('modal-results-container');
     const modalActivity = document.getElementById('modal-activity-container');
     const modalGamification = document.getElementById('modal-gamification-container');
+    const modalLeaderboard = document.getElementById('modal-leaderboard-container');
     
     modalName.innerText = 'جاري التحميل...';
     modal.style.display = 'block';
 
     try {
-        const [student, stats, results, activityLogs, analyticsData] = await Promise.all([
+        const [student, stats, results, activityLogs, analyticsData, leaderboard] = await Promise.all([
             secureFetch(`/students/${studentId}`).then(r => r ? r.json() : {}),
             secureFetch(`/students/${studentId}/stats`).then(r => r ? r.json() : {}),
             secureFetch(`/students/${studentId}/results`).then(r => r ? r.json() : []),
             secureFetch(`/students/${studentId}/activity`).then(r => r ? r.json() : []),
-            secureFetch(`/students/${studentId}/analytics`).then(r => r ? r.json() : {})
+            secureFetch(`/students/${studentId}/analytics`).then(r => r ? r.json() : {}),
+            secureFetch(`/leaderboard`).then(r => r ? r.json() : [])
         ]);
 
         modalName.innerHTML = `
@@ -500,6 +889,27 @@ window.showStudentDetails = async (studentId) => {
                 </div>
                 <h4 style="margin:10px 0">🏅 الأوسمة</h4>
                 ${bHtml}
+                <h4 style="margin:16px 0 8px 0">🛒 المتجر</h4>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="card-btn" disabled title="قريباً">تلميح (50 عملة)</button>
+                    <button class="card-btn" disabled title="قريباً">تخطي سؤال (100 عملة)</button>
+                </div>
+            `;
+        }
+        
+        if (modalLeaderboard && leaderboard && Array.isArray(leaderboard)) {
+            const rows = leaderboard.map((row, i) => {
+                const highlight = row.id === studentId;
+                const color = highlight ? '#f3f4f6' : 'transparent';
+                return `<tr style="background:${color}"><td>${i+1}</td><td>${row.name || 'طالب'}</td><td>${Math.round(row.avgscore || row.avgScore || 0)}%</td><td>${row.totalquizzes || row.totalQuizzes || 0}</td></tr>`;
+            }).join('');
+            modalLeaderboard.innerHTML = `
+                <div class="admin-table-container">
+                    <table class="admin-table">
+                        <thead><tr><th>#</th><th>الاسم</th><th>المعدل</th><th>عدد الاختبارات</th></tr></thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
             `;
         }
 
@@ -694,6 +1104,38 @@ function renderCharts(stats) {
     });
 }
 
+function renderPredictions(pred) {
+    const ctx = document.getElementById('predictionChart');
+    if (!ctx || typeof Chart === 'undefined') return;
+    const history = Array.isArray(pred.history) ? pred.history.map(p => p.y) : [];
+    const forecasts = Array.isArray(pred.predictions) ? pred.predictions.map(p => p.y) : [];
+    const labels = [...history.map((_, i) => `يوم ${i+1}`), ...forecasts.map((_, i) => `تنبؤ ${i+1}`)];
+    const data = [...history, ...forecasts];
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels,
+            datasets: [{
+                label: 'متوسط الدرجات اليومي مع التنبؤ',
+                data,
+                borderColor: '#667eea',
+                backgroundColor: 'rgba(102,126,234,0.15)',
+                tension: 0.3
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                title: { display: true, text: 'اتجاه الأداء والتنبؤ للأيام القادمة' }
+            },
+            scales: {
+                y: { beginAtZero: true, max: 100 }
+            }
+        }
+    });
+}
 function initTheme() {
     const toggleBtn = document.getElementById('theme-toggle-btn');
     const savedTheme = localStorage.getItem('admin_theme');
