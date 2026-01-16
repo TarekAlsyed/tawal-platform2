@@ -424,6 +424,21 @@ async function initIndexPage() {
     
     const finalSubjects = Object.keys(subjectsFromDB).length > 0 ? subjectsFromDB : SUBJECTS;
 
+    try {
+        const statsRes = await fetch(`${API_URL}/public/stats`);
+        if (statsRes.ok) {
+            const stats = await statsRes.json();
+            const studentsEl = document.getElementById('total-students');
+            const quizzesEl = document.getElementById('total-quizzes');
+            const subjectsEl = document.querySelector('.hero-stats .stat-item:nth-child(3) .stat-number');
+            if (studentsEl) animateCounter(studentsEl, stats.totalStudents || 0);
+            if (quizzesEl) animateCounter(quizzesEl, stats.totalQuizzes || 0);
+            if (subjectsEl) animateCounter(subjectsEl, Object.keys(finalSubjects).length || 0);
+        }
+    } catch (e) {
+        console.error('فشل تحميل الإحصائيات:', e);
+    }
+
     g.innerHTML=''; 
     for(const k in finalSubjects){ 
         const s = finalSubjects[k]; 
