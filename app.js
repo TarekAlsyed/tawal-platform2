@@ -699,8 +699,8 @@ async function initSummaryPage(key) {
     
     try {
         const [filesRes, imagesRes] = await Promise.all([
-            fetch(`${API_URL}/admin/subjects/${key}/files`),
-            fetch(`${API_URL}/admin/subjects/${key}/images`)
+            fetch(`${API_URL}/public/subjects/${key}/files`),
+            fetch(`${API_URL}/public/subjects/${key}/images`)
         ]);
         
         const files = filesRes.ok ? await filesRes.json() : [];
