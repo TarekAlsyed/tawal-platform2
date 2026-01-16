@@ -10,7 +10,7 @@
  */
 
 // (*** هام: تم تغيير الرقم إلى v52 لإجبار المتصفح على نسيان الكاش القديم تماماً ***)
-const CACHE_NAME = 'tawal-academy-cache-v52'; 
+const CACHE_NAME = 'tawal-academy-cache-v60'; 
 const DATA_CACHE_NAME = 'tawal-data-cache-v27';
 const FONT_CACHE = 'tawal-fonts-cache-v6';
 
@@ -25,8 +25,8 @@ const CORE_FILES_TO_CACHE = [
     `${BASE_PATH}summary.html`,
     `${BASE_PATH}dashboard.html`,
     `${BASE_PATH}control_panel.html`,
-    `${BASE_PATH}style.css?v=21.0.0`,          // تحديث الستايل
-    `${BASE_PATH}app.js?v=21.0.0`,             // ✅ النسخة الجديدة التي تعالج مشكلة الطالب المحذوف
+    `${BASE_PATH}style.css?v=22.0.0`,          
+    `${BASE_PATH}app.js?v=22.0.0`,             
     `${BASE_PATH}control_panel.js?v=21.0.0`    // ✅ النسخة الجديدة التي تخفي القسم الزائد
 ];
 

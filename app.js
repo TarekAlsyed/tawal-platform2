@@ -404,9 +404,29 @@ async function initIndexPage() {
         if(res.ok) locks = await res.json();
     } catch(e) {}
 
+    let subjectsFromDB = {};
+    try {
+        const subjectsRes = await fetch(`${API_URL}/public/subjects`);
+        if (subjectsRes.ok) {
+            const dbSubjects = await subjectsRes.json();
+            dbSubjects.forEach(s => {
+                subjectsFromDB[s.id] = {
+                    id: s.id,
+                    title: s.title,
+                    icon: s.icon_data || SUBJECTS[s.id]?.icon || '📚'
+                };
+            });
+            console.log('✅ Loaded subjects from database:', Object.keys(subjectsFromDB).length);
+        }
+    } catch(e) {
+        console.warn('⚠️ Failed to load subjects from database, using static list');
+    }
+    
+    const finalSubjects = Object.keys(subjectsFromDB).length > 0 ? subjectsFromDB : SUBJECTS;
+
     g.innerHTML=''; 
-    for(const k in SUBJECTS){ 
-        const s = SUBJECTS[k]; 
+    for(const k in finalSubjects){ 
+        const s = finalSubjects[k]; 
         const lockData = locks[k] || { locked: false, message: '' };
         const isLocked = lockData.locked === true;
         let completionRate = (USER_DATA && USER_DATA.progress) ? (USER_DATA.progress[k] || 0) : 0;
@@ -415,12 +435,16 @@ async function initIndexPage() {
             ? `<button disabled class="card-btn disabled" title="${lockData.message}">⛔ ${lockData.message}</button>`
             : `<a href="quiz.html?subject=${k}" class="card-btn btn-quiz">🧠 ابدأ الاختبار</a>`;
 
+        const iconHTML = typeof s.icon === 'string' && s.icon.startsWith('<svg') 
+            ? s.icon 
+            : `<div style="font-size:2.5rem">${s.icon}</div>`;
+
         g.innerHTML += `
             <div class="subject-card modern-card" data-tilt>
                 ${lockBadge}
                 <div class="card-icon-wrapper">
                     <div class="progress-ring" style="--progress: ${completionRate}">
-                        <div class="card-icon">${s.icon}</div>
+                        <div class="card-icon">${iconHTML}</div>
                     </div>
                 </div>
                 <h3 class="card-title">${s.title}</h3>
@@ -667,30 +691,50 @@ async function initSummaryPage(key) {
     const title = SUBJECTS[key].title;
     $('summary-title').innerText = title;
     recordActivity('view_summary', title);
-    const fDiv = $('summary-content-files'), iDiv = $('summary-content-images');
-    fDiv.innerHTML = '<div style="text-align:center; padding:3rem;"><div class="spinner"></div><p>جاري الفحص...</p></div>';
+    
+    const fDiv = $('summary-content-files');
+    const iDiv = $('summary-content-images');
+    
+    fDiv.innerHTML = '<div style="text-align:center; padding:3rem;"><div class="spinner"></div><p>جاري التحميل...</p></div>';
+    
     try {
-        const res = await fetch(`data_${key}/data_${key}_summary.json?v=${Date.now()}`);
-        if(!res.ok) throw new Error(); 
-        const d = await res.json();
-        const fileChecks = (d.files || []).map(async f => (await checkResourceExists(f.path)) ? f : null);
-        const imageChecks = (d.images || []).map(async img => (await checkResourceExists(img.path)) ? img : null);
-        const [validFiles, validImages] = await Promise.all([Promise.all(fileChecks), Promise.all(imageChecks)]);
+        const [filesRes, imagesRes] = await Promise.all([
+            fetch(`${API_URL}/admin/subjects/${key}/files`),
+            fetch(`${API_URL}/admin/subjects/${key}/images`)
+        ]);
         
-        const fResults = validFiles.filter(f => f);
-        fDiv.innerHTML = fResults.length > 0 ? `<div class="summary-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-top:15px;">` + fResults.map((f, i) => `
-            <a href="${f.path}" target="_blank" onclick="recordActivity('download_file', '${f.name}')" class="summary-card active" style="display:flex; align-items:center; gap:10px; padding:15px; background:var(--bg-secondary-color); border:2px solid var(--color-correct); border-radius:10px; text-decoration:none; color:var(--text-color);">
-                <div style="background:var(--color-correct); color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${i+1}</div>
-                <div><div style="font-weight:bold;">${f.name}</div><div style="font-size:0.8rem; color:var(--color-correct);">📥 اضغط للتحميل</div></div>
-            </a>`).join('') + `</div>` : '<p class="placeholder">لا توجد ملفات.</p>';
-
-        const iResults = validImages.filter(img => img);
-        iDiv.innerHTML = iResults.length > 0 ? `<div class="gallery-grid">` + iResults.map(img => `<div class="gallery-item"><img src="${img.path}" onclick="window.open('${img.path}', '_blank')"><p>${img.caption||''}</p></div>`).join('') + `</div>` : '<p class="placeholder">لا توجد صور.</p>';
-
-        $('btn-summary-files').onclick = ()=>{ fDiv.style.display='block'; iDiv.style.display='none'; }; 
-        $('btn-summary-images').onclick = ()=>{ fDiv.style.display='none'; iDiv.style.display='block'; }; 
+        const files = filesRes.ok ? await filesRes.json() : [];
+        const images = imagesRes.ok ? await imagesRes.json() : [];
+        
+        fDiv.innerHTML = files.length > 0 
+            ? `<div class="summary-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-top:15px;">` 
+            + files.map((f, i) => `
+                <a href="${f.file_path}" target="_blank" onclick="recordActivity('download_file', '${f.file_name}')" 
+                   class="summary-card active" style="display:flex; align-items:center; gap:10px; padding:15px; background:var(--bg-secondary-color); border:2px solid var(--color-correct); border-radius:10px; text-decoration:none; color:var(--text-color);">
+                    <div style="background:var(--color-correct); color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${i+1}</div>
+                    <div><div style="font-weight:bold;">${f.file_name}</div><div style="font-size:0.8rem; color:var(--color-correct);">📥 اضغط للتحميل</div></div>
+                </a>
+            `).join('') + `</div>` 
+            : '<p class="placeholder">لا توجد ملفات.</p>';
+        
+        iDiv.innerHTML = images.length > 0 
+            ? `<div class="gallery-grid">` 
+            + images.map(img => `
+                <div class="gallery-item">
+                    <img src="${img.image_path}" onclick="window.open('${img.image_path}', '_blank')">
+                    <p>${img.caption || ''}</p>
+                </div>
+            `).join('') + `</div>` 
+            : '<p class="placeholder">لا توجد صور.</p>';
+        
+        $('btn-summary-files').onclick = () => { fDiv.style.display='block'; iDiv.style.display='none'; }; 
+        $('btn-summary-images').onclick = () => { fDiv.style.display='none'; iDiv.style.display='block'; }; 
         $('btn-summary-files').click();
-    } catch(e) { fDiv.innerHTML='<p class="placeholder">الملفات غير متوفرة حالياً.</p>'; }
+        
+    } catch(e) { 
+        console.error('Summary Load Error:', e);
+        fDiv.innerHTML = '<p class="placeholder">تعذر تحميل البيانات. يرجى المحاولة لاحقاً.</p>'; 
+    }
 }
 
 // =================================================================
@@ -719,14 +763,54 @@ async function initQuizPage(key) {
 
 window.loadLevelFile = async (key, idx) => {
     const cfg = LEVEL_CONFIG[idx];
+    const levelNumber = cfg.id;
+    
     try {
-        const res = await fetch(`data_${key}/data_${key}${cfg.suffix}?v=${Date.now()}`);
-        if(!res.ok) throw new Error();
-        const data = await res.json();
+        const apiRes = await fetch(`${API_URL}/admin/subjects/${key}/questions?level=${levelNumber}`);
+        
+        let questions = [];
+        
+        if (apiRes.ok) {
+            const dbQuestions = await apiRes.json();
+            
+            if (dbQuestions && dbQuestions.length > 0) {
+                questions = dbQuestions.map(q => ({
+                    type: q.type,
+                    question: q.question,
+                    options: q.type === 'mc' ? JSON.parse(q.options || '[]') : null,
+                    answer: JSON.parse(q.answer),
+                    difficulty: q.difficulty,
+                    topic: q.topic
+                }));
+                
+                console.log(`✅ Loaded ${questions.length} questions from database for Level ${levelNumber}`);
+            }
+        }
+        
+        if (questions.length === 0) {
+            console.warn(`⚠️ No questions in database for Level ${levelNumber}, trying local file...`);
+            const localRes = await fetch(`data_${key}/data_${key}${cfg.suffix}?v=${Date.now()}`);
+            if (localRes.ok) {
+                const data = await localRes.json();
+                questions = data.questions || [];
+                console.log(`✅ Loaded ${questions.length} questions from local JSON file`);
+            }
+        }
+        
+        if (questions.length === 0) {
+            throw new Error('لا توجد أسئلة متاحة لهذا المستوى');
+        }
+        
         recordActivity('start_quiz', `${SUBJECTS[key].title} - ${cfg.titleSuffix}`);
-        $('results-container').style.display = 'none'; $('quiz-body').style.display = 'block'; $('quiz-footer').style.display = 'block';
-        runQuizEngine(data.questions, `${SUBJECTS[key].title} - ${cfg.titleSuffix}`, SUBJECTS[key].id);
-    } catch(e) { showToast('الملف غير موجود.', 'error'); }
+        $('results-container').style.display = 'none'; 
+        $('quiz-body').style.display = 'block'; 
+        $('quiz-footer').style.display = 'block';
+        runQuizEngine(questions, `${SUBJECTS[key].title} - ${cfg.titleSuffix}`, key);
+        
+    } catch(e) { 
+        console.error('Quiz Load Error:', e);
+        showToast('فشل تحميل الاختبار: ' + e.message, 'error'); 
+    }
 };
 
 // =================================================================

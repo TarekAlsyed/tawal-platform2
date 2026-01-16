@@ -442,17 +442,68 @@ function closeUploadFileModal() {
     if (m) m.style.display = 'none';
 }
 async function submitUploadFile() {
-    const subj = document.getElementById('upload-file-subject-select')?.value;
-    const file = document.getElementById('upload-file-input')?.files?.[0];
-    const name = document.getElementById('upload-file-name-input')?.value?.trim();
-    if (!subj || !file) { showToast('اختر مادة وملف', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = async () => {
-        const base64 = reader.result;
-        const res = await secureFetch(`/admin/subjects/${subj}/files-base64`, { method: 'POST', body: JSON.stringify({ file_name: name || file.name, data: base64, mime: file.type }) });
-        if (res && res.ok) { showToast('تم رفع الملف'); closeUploadFileModal(); loadFilesList(); } else showToast('فشل الرفع', 'error');
-    };
-    reader.readAsDataURL(file);
+    const subjSel = document.getElementById('upload-file-subject-select');
+    const fileInput = document.getElementById('upload-file-input');
+    const nameInput = document.getElementById('upload-file-name-input');
+    
+    const subj = subjSel?.value;
+    const file = fileInput?.files?.[0];
+    const customName = nameInput?.value?.trim();
+    
+    if (!subj || !file) { 
+        showToast('اختر مادة وملف', 'error'); 
+        return; 
+    }
+    
+    const btn = document.querySelector('#upload-file-modal .btn-green');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'جاري الرفع...';
+    
+    try {
+        const reader = new FileReader();
+        
+        reader.onload = async () => {
+            const base64 = reader.result;
+            const fileName = customName || file.name;
+            
+            const res = await secureFetch(`/admin/subjects/${subj}/files-base64`, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    file_name: fileName, 
+                    data: base64, 
+                    mime: file.type 
+                }) 
+            });
+            
+            if (res && res.ok) { 
+                showToast('✅ تم رفع الملف بنجاح'); 
+                closeUploadFileModal(); 
+                loadFilesList(); 
+                fileInput.value = '';
+                nameInput.value = '';
+            } else { 
+                showToast('❌ فشل الرفع، حاول مرة أخرى', 'error'); 
+            }
+            
+            btn.disabled = false;
+            btn.innerText = originalText;
+        };
+        
+        reader.onerror = () => {
+            showToast('❌ خطأ في قراءة الملف', 'error');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        };
+        
+        reader.readAsDataURL(file);
+        
+    } catch(e) {
+        console.error('Upload Error:', e);
+        showToast('❌ حدث خطأ أثناء الرفع', 'error');
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
 }
 
 function openUploadImageModal() {
@@ -464,17 +515,67 @@ function closeUploadImageModal() {
     if (m) m.style.display = 'none';
 }
 async function submitUploadImage() {
-    const subj = document.getElementById('upload-image-subject-select')?.value;
-    const file = document.getElementById('upload-image-input')?.files?.[0];
-    const caption = document.getElementById('upload-image-caption-input')?.value?.trim();
-    if (!subj || !file) { showToast('اختر مادة وصورة', 'error'); return; }
-    const reader = new FileReader();
-    reader.onload = async () => {
-        const base64 = reader.result;
-        const res = await secureFetch(`/admin/subjects/${subj}/images-base64`, { method: 'POST', body: JSON.stringify({ caption, data: base64, mime: file.type }) });
-        if (res && res.ok) { showToast('تم رفع الصورة'); closeUploadImageModal(); loadImagesList(); } else showToast('فشل الرفع', 'error');
-    };
-    reader.readAsDataURL(file);
+    const subjSel = document.getElementById('upload-image-subject-select');
+    const fileInput = document.getElementById('upload-image-input');
+    const captionInput = document.getElementById('upload-image-caption-input');
+    
+    const subj = subjSel?.value;
+    const file = fileInput?.files?.[0];
+    const caption = captionInput?.value?.trim();
+    
+    if (!subj || !file) { 
+        showToast('اختر مادة وصورة', 'error'); 
+        return; 
+    }
+    
+    const btn = document.querySelector('#upload-image-modal .btn-green');
+    const originalText = btn.innerText;
+    btn.disabled = true;
+    btn.innerText = 'جاري الرفع...';
+    
+    try {
+        const reader = new FileReader();
+        
+        reader.onload = async () => {
+            const base64 = reader.result;
+            
+            const res = await secureFetch(`/admin/subjects/${subj}/images-base64`, { 
+                method: 'POST', 
+                body: JSON.stringify({ 
+                    caption: caption || file.name, 
+                    data: base64, 
+                    mime: file.type 
+                }) 
+            });
+            
+            if (res && res.ok) { 
+                showToast('✅ تم رفع الصورة بنجاح'); 
+                closeUploadImageModal(); 
+                loadImagesList(); 
+                fileInput.value = '';
+                captionInput.value = '';
+            } else { 
+                showToast('❌ فشل الرفع، حاول مرة أخرى', 'error'); 
+            }
+            
+            btn.disabled = false;
+            btn.innerText = originalText;
+        };
+        
+        reader.onerror = () => {
+            showToast('❌ خطأ في قراءة الصورة', 'error');
+            btn.disabled = false;
+            btn.innerText = originalText;
+        };
+        
+        reader.readAsDataURL(file);
+        
+    } catch(e) {
+        console.error('Upload Error:', e);
+        showToast('❌ حدث خطأ أثناء الرفع', 'error');
+        btn.disabled = false;
+        btn.innerText = originalText;
+    }
 }
 
 function openAddQuestionModal() {
