@@ -79,17 +79,15 @@ async function recordActivity(type, name) {
     activityQueue[key] = Date.now();
 
     try {
-        // console.log(`📡 Recording: ${type} - ${name}`);
-        const response = await fetch(`${API_URL}/log-activity`, {
+        const response = await apiRequest('/log-activity', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
                 studentId: parseInt(CURRENT_STUDENT_ID), 
                 activityType: type, 
                 subjectName: name 
             })
         });
-        if (!response.ok) console.warn('⚠️ Activity logging failed:', response.status);
+        if (!response || !response.ok) console.warn('⚠️ Activity logging failed:', response ? response.status : 'network');
     } catch(e) {
         console.warn('⚠️ Activity logging error:', e.message);
     }
@@ -141,6 +139,13 @@ function showError(title, message) {
     const msg = `<p class="placeholder" style="color:var(--color-incorrect); text-align:center; padding:3rem;">${message}</p>`; 
     if (qc) qc.innerHTML = `<div class="quiz-header"><h2>${title}</h2></div><div class="quiz-body">${msg}</div>`; 
     else showToast(`${title}: ${message}`, 'error');
+}
+
+function encodePath(url) {
+    if (!url) return '';
+    if (url.includes('%')) return url;
+    const parts = url.split('/');
+    return parts.map((p, idx) => (idx === 0 && p === '') ? '' : encodeURIComponent(p)).join('/');
 }
 
 // ✅ المشكلة 10: تحسين تنسيق التاريخ والوقت لضمان العمل على جميع المتصفحات
@@ -728,7 +733,7 @@ async function initSummaryPage(key) {
         fDiv.innerHTML = files.length > 0 
             ? `<div class="summary-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-top:15px;">` 
             + files.map((f, i) => `
-                <a href="${f.file_path}" target="_blank" onclick="recordActivity('download_file', '${f.file_name}')" 
+                <a href="${encodePath(f.file_path)}" target="_blank" onclick="recordActivity('download_file', '${f.file_name}')" 
                    class="summary-card active" style="display:flex; align-items:center; gap:10px; padding:15px; background:var(--bg-secondary-color); border:2px solid var(--color-correct); border-radius:10px; text-decoration:none; color:var(--text-color);">
                     <div style="background:var(--color-correct); color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${i+1}</div>
                     <div><div style="font-weight:bold;">${f.file_name}</div><div style="font-size:0.8rem; color:var(--color-correct);">📥 اضغط للتحميل</div></div>
@@ -740,8 +745,7 @@ async function initSummaryPage(key) {
             ? `<div class="gallery-grid">` 
             + images.map(img => `
                 <div class="gallery-item">
-                    <img src="${img.image_path}" onclick="window.open('${img.image_path}', '_blank')">
-                    <p>${img.caption || ''}</p>
+                    <img src="${encodePath(img.image_path)}" onclick="window.open('${encodePath(img.image_path)}', '_blank')">
                 </div>
             `).join('') + `</div>` 
             : '<p class="placeholder">لا توجد صور.</p>';
