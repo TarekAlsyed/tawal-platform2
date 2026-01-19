@@ -5,8 +5,7 @@
  * =================================================================================
  */
 
-// ✅ التعديل: التأكد من الرابط الصحيح للسيرفر على Fly.io
-const API_URL = 'https://tawal-backend-main.fly.dev/api';
+const API_URL = 'https://tawal-backend-main.fly.dev';
 let adminToken = localStorage.getItem('admin_token');
 
 // متغير عالمي لتخزين بيانات الطلاب لغرض التصدير
@@ -62,7 +61,7 @@ async function secureFetch(endpoint, opts = {}) {
         ...opts.headers 
     };
     try {
-        const res = await fetch(`${API_URL}${endpoint}`, { ...opts, headers });
+        const res = await fetch(`${API_URL}/api${endpoint}`, { ...opts, headers });
         if (res.status === 401 || res.status === 403) {
             localStorage.removeItem('admin_token');
             location.reload(); 

@@ -8,7 +8,7 @@
 // 1. الثوابت والإعدادات
 // ✅ التعديل: تم تثبيت الرابط على السيرفر الأونلاين (Production) بناءً على طلب المستخدم (Online Only)
 // لن يحاول التطبيق الاتصال بـ Localhost حتى لو تم تشغيله محلياً
-const API_URL = 'https://tawal-backend-main.fly.dev/api';
+const API_URL = 'https://tawal-backend-main.fly.dev';
 const STORAGE_KEY_STUDENT_ID = 'tawal_student_id_v2';
 const STORAGE_KEY_USER = 'tawal_user_data_v2';
 const STORAGE_KEY_FP = 'tawal_device_fp_fixed';
@@ -100,13 +100,13 @@ function encryptData(data) { return btoa(JSON.stringify(data)); }
 function decryptData(encrypted) { try { return JSON.parse(atob(encrypted)); } catch { return null; } }
 
 function getStudentId() {
-    const savedData = decryptData(localStorage.getItem(STORAGE_KEY_STUDENT_ID));
+    const savedData = decryptData(sessionStorage.getItem(STORAGE_KEY_STUDENT_ID));
     if (savedData && savedData.id) return savedData.id;
     return null;
 }
 
 function saveStudentId(id) {
-    localStorage.setItem(STORAGE_KEY_STUDENT_ID, encryptData({ id: id, timestamp: Date.now() }));
+    sessionStorage.setItem(STORAGE_KEY_STUDENT_ID, encryptData({ id: id, timestamp: Date.now() }));
     CURRENT_STUDENT_ID = id;
 }
 
@@ -168,7 +168,7 @@ async function apiRequest(endpoint, opts = {}, retries = 2) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 ثواني مهلة
 
-            const res = await fetch(`${API_URL}${endpoint}`, { 
+            const res = await fetch(`${API_URL}/api${endpoint}`, { 
                 ...opts, 
                 headers: { 'Content-Type': 'application/json', ...opts.headers },
                 signal: controller.signal
@@ -214,10 +214,10 @@ async function apiRequest(endpoint, opts = {}, retries = 2) {
 // 4. البصمة والأمان
 // =================================================================
 async function getFingerprint() {
-    let savedFp = localStorage.getItem(STORAGE_KEY_FP);
+    let savedFp = sessionStorage.getItem(STORAGE_KEY_FP);
     if (!savedFp) {
         savedFp = 'fp_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36);
-        localStorage.setItem(STORAGE_KEY_FP, savedFp);
+        sessionStorage.setItem(STORAGE_KEY_FP, savedFp);
     }
     try {
         await apiRequest('/verify-fingerprint', { method: 'POST', body: JSON.stringify({ fingerprint: savedFp }) });
@@ -340,7 +340,7 @@ async function registerStudent(fp) {
         const d = await res.json();
         saveStudentId(d.id);
         USER_DATA = d; 
-        localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(d)); 
+        sessionStorage.setItem(STORAGE_KEY_USER, JSON.stringify(d)); 
         showToast(`تم التسجيل بنجاح!`, 'success'); 
         return true; 
     } catch (err) { 
@@ -356,7 +356,11 @@ window.logoutStudent = async () => {
             await apiRequest('/logout', { method: 'POST', body: JSON.stringify({ studentId: CURRENT_STUDENT_ID }) });
         } catch(e) {}
     }
-    localStorage.clear();
+    try {
+        sessionStorage.removeItem(STORAGE_KEY_STUDENT_ID);
+        sessionStorage.removeItem(STORAGE_KEY_USER);
+        sessionStorage.removeItem(STORAGE_KEY_FP);
+    } catch(e) {}
     showToast('تم تسجيل الخروج بنجاح', 'success');
     setTimeout(() => location.href = 'index.html', 1000);
 };
@@ -393,20 +397,20 @@ function animateCounter(element, target, duration = 2000) {
 async function initIndexPage() { 
     const g = $('subjects-grid'); 
     if(!g) return; 
-    recordActivity('view_home', 'الصفحة الرئيسية');
+    await recordActivity('view_home', 'الصفحة الرئيسية');
     showLoading(g); 
     const logoEl = document.querySelector('.main-header .logo'); 
     if(logoEl) logoEl.innerHTML = LOGO_SVG + ' Tawal Academy'; 
     
     let locks = {};
     try {
-        const res = await fetch(`${API_URL}/quiz-status`);
+        const res = await apiRequest(`/quiz-status`);
         if(res.ok) locks = await res.json();
     } catch(e) {}
 
     let subjectsFromDB = {};
     try {
-        const subjectsRes = await fetch(`${API_URL}/public/subjects`);
+        const subjectsRes = await apiRequest(`/public/subjects`);
         if (subjectsRes.ok) {
             const dbSubjects = await subjectsRes.json();
             dbSubjects.forEach(s => {
@@ -425,7 +429,7 @@ async function initIndexPage() {
     const finalSubjects = Object.keys(subjectsFromDB).length > 0 ? subjectsFromDB : SUBJECTS;
 
     try {
-        const statsRes = await fetch(`${API_URL}/public/stats`);
+        const statsRes = await apiRequest(`/public/stats`);
         if (statsRes.ok) {
             const stats = await statsRes.json();
             const studentsEl = document.getElementById('total-students');
@@ -705,7 +709,7 @@ async function initSummaryPage(key) {
     if(!SUBJECTS[key]) return;
     const title = SUBJECTS[key].title;
     $('summary-title').innerText = title;
-    recordActivity('view_summary', title);
+    await recordActivity('view_summary', title);
     
     const fDiv = $('summary-content-files');
     const iDiv = $('summary-content-images');
@@ -714,8 +718,8 @@ async function initSummaryPage(key) {
     
     try {
         const [filesRes, imagesRes] = await Promise.all([
-            fetch(`${API_URL}/public/subjects/${key}/files`),
-            fetch(`${API_URL}/public/subjects/${key}/images`)
+            apiRequest(`/public/subjects/${key}/files`),
+            apiRequest(`/public/subjects/${key}/images`)
         ]);
         
         const files = filesRes.ok ? await filesRes.json() : [];
@@ -757,8 +761,8 @@ async function initSummaryPage(key) {
 // =================================================================
 async function initQuizPage(key) {
     if(!SUBJECTS[key]) return;
-    recordActivity('open_quiz_menu', SUBJECTS[key].title);
-    const locks = await (async () => { try { const r = await fetch(`${API_URL}/quiz-status`); return r.ok ? await r.json() : {}; } catch { return {}; } })();
+    await recordActivity('open_quiz_menu', SUBJECTS[key].title);
+    const locks = await (async () => { try { const r = await apiRequest(`/quiz-status`); return r && r.ok ? await r.json() : {}; } catch { return {}; } })();
     if (locks[key]?.locked) { showError('عذراً', locks[key].message || 'الاختبار مغلق.'); return; }
     $('quiz-title').innerText = SUBJECTS[key].title; 
     const body = $('quiz-body'); showLoading(body);
@@ -781,7 +785,7 @@ window.loadLevelFile = async (key, idx) => {
     const levelNumber = cfg.id;
     
     try {
-        const apiRes = await fetch(`${API_URL}/admin/subjects/${key}/questions?level=${levelNumber}`);
+        const apiRes = await apiRequest(`/admin/subjects/${key}/questions?level=${levelNumber}`);
         
         let questions = [];
         
@@ -816,7 +820,7 @@ window.loadLevelFile = async (key, idx) => {
             throw new Error('لا توجد أسئلة متاحة لهذا المستوى');
         }
         
-        recordActivity('start_quiz', `${SUBJECTS[key].title} - ${cfg.titleSuffix}`);
+        await recordActivity('start_quiz', `${SUBJECTS[key].title} - ${cfg.titleSuffix}`);
         $('results-container').style.display = 'none'; 
         $('quiz-body').style.display = 'block'; 
         $('quiz-footer').style.display = 'block';

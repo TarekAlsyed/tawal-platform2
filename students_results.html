@@ -53,18 +53,18 @@ function renderResults(){
     if(!name&&!mail)return false;
     return true;
   });
-  container.innerHTML=filtered.map(s=>`
+  container.innerHTML=filtered.map(student=>`
     <div class="student-card">
       <div class="student-header">
         <div class="student-info">
-          <div class="student-avatar">${(s.name||'?').charAt(0)}</div>
+          <div class="student-avatar">${(student.name||'?').charAt(0)}</div>
           <div class="student-details">
-            <h3>${s.name||''}</h3>
-            <p>${s.email||''}</p>
+            <h3>${student.name||''}</h3>
+            <p>${student.email||''}</p>
           </div>
         </div>
         <div class="overall-score">
-          <div class="score-circle" style="--score:${Math.round(parseFloat(s.averageScore||0))}">
+          <div class="score-circle" style="--score:${Math.round(parseFloat(student.averageScore||0))}">
             <div class="score-circle-inner"><span style="font-size:1rem;font-weight:700;">${Math.round(parseFloat(s.averageScore||0))}%</span></div>
           </div>
           <div class="score-label">المعدل العام</div>
@@ -73,11 +73,11 @@ function renderResults(){
       <div class="quiz-results">
         <div class="quiz-item" style="text-align:center;">
           <div class="quiz-name">عدد الاختبارات</div>
-          <div style="font-weight:700;">${parseInt(s.totalQuizzes||0)}</div>
+          <div style="font-weight:700;">${parseInt(student.totalQuizzes||0)}</div>
         </div>
         <div class="quiz-item" style="text-align:center;">
           <div class="quiz-name">أفضل درجة</div>
-          <div style="font-weight:700;color:var(--success);">${parseInt(s.bestScore||0)}%</div>
+          <div style="font-weight:700;color:var(--success);">${parseInt(student.bestScore||0)}%</div>
         </div>
       </div>
     </div>
