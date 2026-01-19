@@ -8,6 +8,13 @@
 const API_URL = 'https://tawal-backend-main.fly.dev';
 let adminToken = localStorage.getItem('admin_token');
 
+function encodePath(url) {
+    if (!url) return '';
+    if (url.includes('%')) return url;
+    const parts = url.split('/');
+    return parts.map((p, idx) => (idx === 0 && p === '') ? '' : encodeURIComponent(p)).join('/');
+}
+
 // متغير عالمي لتخزين بيانات الطلاب لغرض التصدير
 let GLOBAL_STUDENTS_DATA = [];
 let statsChartInstance = null; 
@@ -163,7 +170,7 @@ function showLoginScreen() {
         btn.innerText = 'جاري التحقق...';
         btn.disabled = true;
         try {
-            const res = await fetch(`${API_URL}/admin/login`, {
+            const res = await fetch(`${API_URL}/api/admin/login`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ password })
@@ -278,7 +285,7 @@ async function loadFilesList() {
                 <thead><tr><th>الاسم</th><th>الحجم</th><th>تاريخ</th><th>إجراءات</th></tr></thead>
                 <tbody>${
                     files.map(f => `<tr>
-                        <td><a href="${f.file_path}" target="_blank">${f.file_name}</a></td>
+                        <td><a href="${API_URL}${encodePath(f.file_path)}" target="_blank">${f.file_name}</a></td>
                         <td>${Math.round((f.file_size || 0)/1024)} KB</td>
                         <td style="font-size:.85rem; color:#9ca3af;">${new Date(f.uploaded_at).toLocaleString('ar-EG')}</td>
                         <td><button class="btn btn-red" onclick="deleteFile(${f.id})">حذف</button></td>
@@ -302,7 +309,7 @@ async function loadImagesList() {
         <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap:10px;">
             ${imgs.map(i => `
                 <div style="border:1px solid #e5e7eb; border-radius:10px; padding:8px; background:#fff;">
-                    <img src="${i.image_path}" alt="" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">
+                    <img src="${API_URL}${encodePath(i.image_path)}" alt="" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">
                     <div style="font-size:.85rem; color:#6b7280; margin-top:6px;">${i.caption || ''}</div>
                     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
                         <button class="btn btn-red" onclick="deleteImage(${i.id})">حذف</button>

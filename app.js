@@ -733,7 +733,7 @@ async function initSummaryPage(key) {
         fDiv.innerHTML = files.length > 0 
             ? `<div class="summary-grid" style="display:grid; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr)); gap:15px; margin-top:15px;">` 
             + files.map((f, i) => `
-                <a href="${encodePath(f.file_path)}" target="_blank" onclick="recordActivity('download_file', '${f.file_name}')" 
+                <a href="${API_URL}${encodePath(f.file_path)}" target="_blank" onclick="recordActivity('download_file', '${f.file_name}')" 
                    class="summary-card active" style="display:flex; align-items:center; gap:10px; padding:15px; background:var(--bg-secondary-color); border:2px solid var(--color-correct); border-radius:10px; text-decoration:none; color:var(--text-color);">
                     <div style="background:var(--color-correct); color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${i+1}</div>
                     <div><div style="font-weight:bold;">${f.file_name}</div><div style="font-size:0.8rem; color:var(--color-correct);">📥 اضغط للتحميل</div></div>
@@ -745,7 +745,7 @@ async function initSummaryPage(key) {
             ? `<div class="gallery-grid">` 
             + images.map(img => `
                 <div class="gallery-item">
-                    <img src="${encodePath(img.image_path)}" onclick="window.open('${encodePath(img.image_path)}', '_blank')">
+                    <img src="${API_URL}${encodePath(img.image_path)}" onclick="window.open('${API_URL}${encodePath(img.image_path)}', '_blank')">
                 </div>
             `).join('') + `</div>` 
             : '<p class="placeholder">لا توجد صور.</p>';
