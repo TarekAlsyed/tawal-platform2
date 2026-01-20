@@ -10,8 +10,8 @@
  */
 
 // (*** هام: تم تغيير الرقم إلى v52 لإجبار المتصفح على نسيان الكاش القديم تماماً ***)
-const CACHE_NAME = 'tawal-academy-cache-v60'; 
-const DATA_CACHE_NAME = 'tawal-data-cache-v27';
+const CACHE_NAME = 'tawal-academy-cache-v61'; 
+const DATA_CACHE_NAME = 'tawal-data-cache-v28';
 const FONT_CACHE = 'tawal-fonts-cache-v6';
 
 // تأكد أن هذا المسار يطابق اسم المستودع الخاص بك على GitHub

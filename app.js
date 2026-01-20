@@ -66,6 +66,19 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('error', function(e) {
+        if (e.target.tagName === 'IMG') {
+            console.warn('Failed to load image:', e.target.src);
+            e.target.style.display = 'none';
+            const placeholder = document.createElement('div');
+            placeholder.style.cssText = 'background:#f3f4f6;border:2px dashed #d1d5db;border-radius:8px;padding:20px;text-align:center;color:#6b7280;';
+            placeholder.innerHTML = '🖼️<br>فشل تحميل الصورة';
+            e.target.parentNode.insertBefore(placeholder, e.target);
+        }
+    }, true);
+});
+
 // ✅ المشكلة 2: تحسين recordActivity لتكون Async وتنتظر الرد لضمان التسجيل في السيرفر
 // Throttle Activity Logging
 const activityQueue = {};
