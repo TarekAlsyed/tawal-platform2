@@ -575,14 +575,46 @@
                                     <div id="subjects-list"><div class="spinner">جاري التحميل...</div></div>
                                 </div>
                                 <div id="cms-files-tab" style="display:none;">
-                                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px;">
-                                        <select id="files-subject-select" class="btn" style="background:#f9fafb; color:#374151;"></select>
-                                        <button class="btn btn-green" onclick="openUploadFileModal()">رفع ملف</button>
-                                        <button class="btn btn-green" onclick="openUploadImageModal()">رفع صورة</button>
+                                    <div style="display:flex; gap:10px; align-items:center; margin-bottom:10px; flex-wrap:wrap;">
+                                        <select id="files-subject-select" class="btn" style="background:#f9fafb; color:#374151; flex:1; min-width:200px;"></select>
+                                        
+                                        <!-- أزرار الرفع -->
+                                        <button class="btn btn-green" onclick="openUploadFileModal()">
+                                            <i data-lucide="upload" style="width:14px; display:inline; margin-left:4px;"></i>
+                                            رفع ملف
+                                        </button>
+                                        <button class="btn btn-green" onclick="openUploadImageModal()">
+                                            <i data-lucide="image" style="width:14px; display:inline; margin-left:4px;"></i>
+                                            رفع صورة
+                                        </button>
+                                        
+                                        <!-- أزرار الحذف الجماعي الجديدة -->
+                                        <button class="btn" onclick="bulkDeleteFiles()" 
+                                                style="background:#fff3cd; color:#856404; border:1px solid #ffc107;" 
+                                                title="حذف جميع ملفات PDF للمادة المختارة">
+                                            <i data-lucide="trash-2" style="width:14px; display:inline; margin-left:4px;"></i>
+                                            حذف كل الملفات
+                                        </button>
+                                        
+                                        <button class="btn" onclick="bulkDeleteImages()" 
+                                                style="background:#f8d7da; color:#721c24; border:1px solid #f5c6cb;" 
+                                                title="حذف جميع صور المادة المختارة">
+                                            <i data-lucide="image-off" style="width:14px; display:inline; margin-left:4px;"></i>
+                                            حذف كل الصور
+                                        </button>
+
+                                        <button class="btn" onclick="bulkDeleteAllContent()" 
+                                                style="background:#dc3545; color:white; border:1px solid #c82333; font-weight:bold;" 
+                                                title="حذف جميع الملفات والصور معاً">
+                                            <i data-lucide="trash" style="width:14px; display:inline; margin-left:4px;"></i>
+                                            حذف كل المحتوى
+                                        </button>
                                     </div>
-                                    <h4 style="margin:8px 0;">الملفات</h4>
+                                    
+                                    <h4 style="margin:8px 0;">📄 الملفات (PDF/DOCX)</h4>
                                     <div id="files-list"><div class="spinner">جاري التحميل...</div></div>
-                                    <h4 style="margin:16px 0 8px 0;">الصور</h4>
+                                    
+                                    <h4 style="margin:16px 0 8px 0;">🖼️ الصور</h4>
                                     <div id="images-list"><div class="spinner">جاري التحميل...</div></div>
                                 </div>
                                 <div id="cms-questions-tab" style="display:none;">

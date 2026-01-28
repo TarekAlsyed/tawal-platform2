@@ -1226,3 +1226,77 @@ input:checked + .slider:before { transform: translateX(14px); }
     opacity: 1;
     visibility: visible;
 }
+
+/* ============================================================
+   🗑️ Bulk Delete Buttons Styles
+   ============================================================ */
+
+.btn-bulk-delete {
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.btn-bulk-delete:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.btn-bulk-delete:active {
+    transform: translateY(0);
+}
+
+/* تأثير Ripple عند الضغط */
+.btn-bulk-delete::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.5);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+}
+
+.btn-bulk-delete:active::after {
+    width: 300px;
+    height: 300px;
+}
+
+/* تنسيق خاص لزر حذف الملفات */
+.btn-delete-files {
+    background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%);
+    color: #856404;
+    border: 2px solid #ffc107;
+}
+
+.btn-delete-files:hover {
+    background: linear-gradient(135deg, #ffeaa7 0%, #fdcb6e 100%);
+    border-color: #e0a800;
+}
+
+/* تنسيق خاص لزر حذف الصور */
+.btn-delete-images {
+    background: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+    color: #721c24;
+    border: 2px solid #f5c6cb;
+}
+
+.btn-delete-images:hover {
+    background: linear-gradient(135deg, #f5c6cb 0%, #e3a7ab 100%);
+    border-color: #e74c3c;
+}
+
+/* Responsive للموبايل */
+@media (max-width: 768px) {
+    #cms-files-tab > div:first-child {
+        flex-direction: column;
+    }
+    
+    #cms-files-tab .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

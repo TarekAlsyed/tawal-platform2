@@ -1363,6 +1363,227 @@ function closeUploadFileModal() {
     if (modal) modal.style.display = 'none'; 
 }
 
+// ============================================================
+// 🗑️ Bulk Delete Functions
+// ============================================================
+
+/**
+ * حذف جميع ملفات PDF للمادة المختارة
+ */
+window.bulkDeleteFiles = async function() {
+    const subjSel = document.getElementById('files-subject-select');
+    if (!subjSel) {
+        showToast('حدث خطأ: لم يتم العثور على قائمة المواد', 'error');
+        return;
+    }
+    
+    const subjectId = subjSel.value;
+    if (!subjectId) {
+        showToast('اختر مادة أولاً', 'error');
+        return;
+    }
+    
+    // الحصول على اسم المادة للعرض في التأكيد
+    const subjectName = subjSel.options[subjSel.selectedIndex]?.text || subjectId;
+    
+    // ✅ تأكيد مزدوج لحماية من الحذف الخطأ
+    const firstConfirm = confirm(
+        `⚠️ تحذير!\n\n` +
+        `هل أنت متأكد من حذف جميع ملفات PDF للمادة:\n"${subjectName}"?\n\n` +
+        `هذا الإجراء لا يمكن التراجع عنه!`
+    );
+    
+    if (!firstConfirm) return;
+    
+    // تأكيد ثانٍ
+    const secondConfirm = confirm(
+        `❗ تأكيد نهائي\n\n` +
+        `اضغط "موافق" لحذف جميع الملفات بشكل نهائي.\n` +
+        `اضغط "إلغاء" للتراجع.`
+    );
+    
+    if (!secondConfirm) return;
+    
+    // عرض مؤشر التحميل
+    const filesList = document.getElementById('files-list');
+    if (filesList) {
+        filesList.innerHTML = '<div class="spinner">جاري حذف الملفات...</div>';
+    }
+    
+    try {
+        const response = await secureFetch(`/admin/subjects/${subjectId}/files-bulk`, {
+            method: 'DELETE'
+        });
+        
+        if (!response) {
+            throw new Error('فشل الاتصال بالسيرفر');
+        }
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(
+                `✅ ${result.message}\n` +
+                `(${result.deleted} ملف من النظام، ${result.dbRecords} سجل من قاعدة البيانات)`,
+                'success'
+            );
+            
+            // إعادة تحميل قائمة الملفات
+            await loadFilesList();
+        } else {
+            const error = await response.json();
+            if (response.status === 404) {
+                showToast('لا توجد ملفات لحذفها في هذه المادة', 'error');
+                await loadFilesList();
+            } else {
+                throw new Error(error.error || 'حدث خطأ غير معروف');
+            }
+        }
+    } catch (err) {
+        console.error('Bulk delete files error:', err);
+        showToast(`❌ فشل حذف الملفات: ${err.message}`, 'error');
+        
+        // محاولة إعادة تحميل القائمة حتى لو فشل الحذف
+        try {
+            await loadFilesList();
+        } catch (reloadErr) {
+            if (filesList) {
+                filesList.innerHTML = '<p class="empty" style="color:red;">حدث خطأ. حاول تحديث الصفحة.</p>';
+            }
+        }
+    }
+};
+
+/**
+ * حذف جميع صور المادة المختارة
+ */
+window.bulkDeleteImages = async function() {
+    const subjSel = document.getElementById('files-subject-select');
+    if (!subjSel) {
+        showToast('حدث خطأ: لم يتم العثور على قائمة المواد', 'error');
+        return;
+    }
+    
+    const subjectId = subjSel.value;
+    if (!subjectId) {
+        showToast('اختر مادة أولاً', 'error');
+        return;
+    }
+    
+    // الحصول على اسم المادة للعرض في التأكيد
+    const subjectName = subjSel.options[subjSel.selectedIndex]?.text || subjectId;
+    
+    // ✅ تأكيد مزدوج لحماية من الحذف الخطأ
+    const firstConfirm = confirm(
+        `⚠️ تحذير!\n\n` +
+        `هل أنت متأكد من حذف جميع صور المادة:\n"${subjectName}"?\n\n` +
+        `هذا الإجراء لا يمكن التراجع عنه!`
+    );
+    
+    if (!firstConfirm) return;
+    
+    // تأكيد ثانٍ
+    const secondConfirm = confirm(
+        `❗ تأكيد نهائي\n\n` +
+        `اضغط "موافق" لحذف جميع الصور بشكل نهائي.\n` +
+        `اضغط "إلغاء" للتراجع.`
+    );
+    
+    if (!secondConfirm) return;
+    
+    // عرض مؤشر التحميل
+    const imagesList = document.getElementById('images-list');
+    if (imagesList) {
+        imagesList.innerHTML = '<div class="spinner">جاري حذف الصور...</div>';
+    }
+    
+    try {
+        const response = await secureFetch(`/admin/subjects/${subjectId}/images-bulk`, {
+            method: 'DELETE'
+        });
+        
+        if (!response) {
+            throw new Error('فشل الاتصال بالسيرفر');
+        }
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(
+                `✅ ${result.message}\n` +
+                `(${result.deleted} صورة من النظام، ${result.dbRecords} سجل من قاعدة البيانات)`,
+                'success'
+            );
+            
+            // إعادة تحميل قائمة الصور
+            await loadImagesList();
+        } else {
+            const error = await response.json();
+            if (response.status === 404) {
+                showToast('لا توجد صور لحذفها في هذه المادة', 'error');
+                await loadImagesList();
+            } else {
+                throw new Error(error.error || 'حدث خطأ غير معروف');
+            }
+        }
+    } catch (err) {
+        console.error('Bulk delete images error:', err);
+        showToast(`❌ فشل حذف الصور: ${err.message}`, 'error');
+        
+        // محاولة إعادة تحميل القائمة حتى لو فشل الحذف
+        try {
+            await loadImagesList();
+        } catch (reloadErr) {
+            if (imagesList) {
+                imagesList.innerHTML = '<p class="empty" style="color:red;">حدث خطأ. حاول تحديث الصفحة.</p>';
+            }
+        }
+    }
+};
+
+/**
+ * ✅ Bonus: حذف جميع محتويات المادة (ملفات + صور)
+ */
+window.bulkDeleteAllContent = async function() {
+    const subjSel = document.getElementById('files-subject-select');
+    if (!subjSel) {
+        showToast('حدث خطأ: لم يتم العثور على قائمة المواد', 'error');
+        return;
+    }
+    
+    const subjectId = subjSel.value;
+    if (!subjectId) {
+        showToast('اختر مادة أولاً', 'error');
+        return;
+    }
+    
+    const subjectName = subjSel.options[subjSel.selectedIndex]?.text || subjectId;
+    
+    const confirm1 = confirm(
+        `🚨 تحذير شديد!\n\n` +
+        `سيتم حذف جميع الملفات والصور للمادة:\n"${subjectName}"\n\n` +
+        `هل تريد المتابعة؟`
+    );
+    
+    if (!confirm1) return;
+    
+    const confirm2 = confirm(
+        `❗❗ تأكيد نهائي\n\n` +
+        `هذا سيحذف:\n` +
+        `✗ جميع ملفات PDF\n` +
+        `✗ جميع الصور\n\n` +
+        `لا يمكن التراجع. هل أنت متأكد؟`
+    );
+    
+    if (!confirm2) return;
+    
+    // حذف الملفات أولاً
+    await bulkDeleteFiles();
+    
+    // ثم حذف الصور
+    setTimeout(async () => {
+        await bulkDeleteImages();
+    }, 1000);
+};
+
 // تشغيل الدوال عند التحميل
 document.addEventListener('DOMContentLoaded', () => {
     initTheme();
