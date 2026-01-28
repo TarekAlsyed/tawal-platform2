@@ -493,14 +493,6 @@ function uploadSubjectIcon(subjectId) {
     showToast('ميزة رفع الأيقونة تتطلب إعداد التخزين', 'error');
 }
 
-function openUploadFileModal() {
-    const m = document.getElementById('upload-file-modal');
-    if (m) m.style.display = 'block';
-}
-function closeUploadFileModal() {
-    const m = document.getElementById('upload-file-modal');
-    if (m) m.style.display = 'none';
-}
 // ✅ [Item 1] تحديث نظام رفع الملفات لاستخدام FormData والتحقق من الحجم والنوع
 async function submitUploadFile() {
     const subjSel = document.getElementById('upload-file-subject-select');
@@ -1332,6 +1324,43 @@ function initSidebar() {
             overlay.classList.remove('show');
         };
     }
+}
+
+// ========================================== 
+//  دوال فتح وإغلاق النوافذ (Modals)
+// ========================================== 
+
+// فتح نافذة رفع الصور 
+function openUploadImageModal() { 
+    const modal = document.getElementById('upload-image-modal'); 
+    if (modal) { 
+        modal.style.display = 'flex';
+        const form = document.getElementById('upload-image-form'); 
+        if (form) form.reset(); 
+    } else { 
+        console.error('Modal element #upload-image-modal not found!'); 
+    } 
+} 
+
+// إغلاق نافذة رفع الصور 
+function closeUploadImageModal() { 
+    const modal = document.getElementById('upload-image-modal'); 
+    if (modal) modal.style.display = 'none'; 
+} 
+
+// فتح نافذة رفع الملفات
+function openUploadFileModal() { 
+    const modal = document.getElementById('upload-file-modal'); 
+    if (modal) { 
+        modal.style.display = 'flex'; 
+        const form = document.getElementById('upload-file-form'); 
+        if (form) form.reset(); 
+    } 
+} 
+
+function closeUploadFileModal() { 
+    const modal = document.getElementById('upload-file-modal'); 
+    if (modal) modal.style.display = 'none'; 
 }
 
 // تشغيل الدوال عند التحميل
