@@ -7,6 +7,40 @@
 
 const API_URL = 'https://tawal-backend-main.fly.dev';
 let adminToken = localStorage.getItem('admin_token');
+let tokenExpiry = localStorage.getItem('admin_token_expiry');
+
+// ✅ [Item 6] التحقق من انتهاء صلاحية التوكن (Auto Logout)
+if (adminToken && tokenExpiry) {
+    if (Date.now() > parseInt(tokenExpiry)) {
+        localStorage.removeItem('admin_token');
+        localStorage.removeItem('admin_token_expiry');
+        location.reload();
+    }
+}
+
+// ✅ [Item 6] تتبع النشاط لتسجيل الخروج التلقائي بعد 30 دقيقة خمول
+setInterval(() => {
+    const lastActivity = localStorage.getItem('last_admin_activity');
+    if (lastActivity && Date.now() - parseInt(lastActivity) > 30 * 60 * 1000) {
+        localStorage.clear();
+        location.reload();
+    }
+}, 60000);
+
+document.addEventListener('click', () => {
+    localStorage.setItem('last_admin_activity', Date.now());
+});
+
+// ✅ [Item 10] دالة لمنع ثغرات XSS
+function escapeHtml(unsafe) {
+    if (!unsafe) return '';
+    return String(unsafe)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
 
 function encodePath(url) {
     if (!url) return '';
@@ -38,7 +72,15 @@ const ACTIVITY_MAP = {
     'start_quiz': '🚀 بدأ اختبار',
     'download_file': '📥 حمل ملف',
     'view_files_tab': '📂 استعرض الملفات',
-    'view_gallery_tab': '🖼️ استعرض الصور'
+    'view_gallery_tab': '🖼️ استعرض الصور',
+    'login': '🔑 تسجيل دخول',
+    'logout': '🚪 تسجيل خروج',
+    'register': '📝 تسجيل حساب جديد',
+    'view_dashboard': '📊 فتح لوحة الطالب',
+    'send_message': '📩 أرسل رسالة دعم',
+    'create_group': '➕ أنشأ مجموعة',
+    'join_group': '👥 انضم لمجموعة',
+    'leave_group': '🚶 غادر مجموعة'
 };
 
 // =================================================================
@@ -49,16 +91,28 @@ const ACTIVITY_MAP = {
 function formatDate(dateString) {
     if (!dateString || dateString === 'null' || dateString === 'undefined') return '-';
     try {
-        let safeDate = String(dateString).replace(' ', 'T');
-        if (!safeDate.includes('Z') && !safeDate.includes('+')) safeDate += 'Z';
-        const d = new Date(safeDate);
-        if (isNaN(d.getTime())) return '-';
-        return new Intl.DateTimeFormat('ar-EG', { 
-            timeZone: 'Africa/Cairo',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', hour12: true
-        }).format(d);
+        // دعم الـ Timestamps والأرقام
+        const timestamp = isNaN(dateString) ? dateString : Number(dateString);
+        const d = new Date(timestamp);
+        
+        if (isNaN(d.getTime())) {
+            // محاولة معالجة صيغ التواريخ النصية المختلفة
+            let safeDate = String(dateString).replace(' ', 'T');
+            if (!safeDate.includes('Z') && !safeDate.includes('+')) safeDate += 'Z';
+            const d2 = new Date(safeDate);
+            if (isNaN(d2.getTime())) return '-';
+            return formatWithIntl(d2);
+        }
+        return formatWithIntl(d);
     } catch (e) { return '-'; }
+}
+
+function formatWithIntl(date) {
+    return new Intl.DateTimeFormat('ar-EG', { 
+        timeZone: 'Africa/Cairo',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    }).format(date);
 }
 
 async function secureFetch(endpoint, opts = {}) {
@@ -285,10 +339,10 @@ async function loadFilesList() {
                 <thead><tr><th>الاسم</th><th>الحجم</th><th>تاريخ</th><th>إجراءات</th></tr></thead>
                 <tbody>${
                     files.map(f => `<tr>
-                        <td><a href="${API_URL}${encodePath(f.file_path)}" target="_blank">${f.file_name}</a></td>
-                        <td>${Math.round((f.file_size || 0)/1024)} KB</td>
-                        <td style="font-size:.85rem; color:#9ca3af;">${new Date(f.uploaded_at).toLocaleString('ar-EG')}</td>
-                        <td><button class="btn btn-red" onclick="deleteFile(${f.id})">حذف</button></td>
+                <td><a href="${API_URL}${encodePath(f.file_path)}" target="_blank">${escapeHtml(f.file_name)}</a></td>
+                <td>${Math.round((f.file_size || 0)/1024)} KB</td>
+                <td style="font-size:.85rem; color:#9ca3af;">${formatDate(f.uploaded_at)}</td>
+                <td><button class="btn btn-red" onclick="deleteFile(${f.id})">حذف</button></td>
                     </tr>`).join('')
                 }</tbody>
             </table>
@@ -310,7 +364,7 @@ async function loadImagesList() {
             ${imgs.map(i => `
                 <div style="border:1px solid #e5e7eb; border-radius:10px; padding:8px; background:#fff;">
                     <img src="${API_URL}${encodePath(i.image_path)}" alt="" style="width:100%; height:120px; object-fit:cover; border-radius:8px;">
-                    <div style="font-size:.85rem; color:#6b7280; margin-top:6px;">${i.caption || ''}</div>
+                    <div style="font-size:.85rem; color:#6b7280; margin-top:6px;">${escapeHtml(i.caption || '')}</div>
                     <div style="display:flex; justify-content:flex-end; gap:8px; margin-top:6px;">
                         <button class="btn btn-red" onclick="deleteImage(${i.id})">حذف</button>
                     </div>
@@ -348,8 +402,8 @@ async function loadCMSSubjects() {
             <div style="display:flex; align-items:center; gap:12px; padding:10px; border:1px solid #e5e7eb; border-radius:12px; margin-bottom:8px; background:#fff;">
                 ${imgEl}
                 <div style="flex:1">
-                    <div style="font-weight:700">${s.title || s.id}</div>
-                    <div style="font-size:.85rem; color:#6b7280">${s.description || ''}</div>
+                    <div style="font-weight:700">${escapeHtml(s.title || s.id)}</div>
+                    <div style="font-size:.85rem; color:#6b7280">${escapeHtml(s.description || '')}</div>
                 </div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn" style="background:#f3f4f6; color:#4b5563;" onclick="editSubject('${s.id}')">تعديل</button>
@@ -447,6 +501,7 @@ function closeUploadFileModal() {
     const m = document.getElementById('upload-file-modal');
     if (m) m.style.display = 'none';
 }
+// ✅ [Item 1] تحديث نظام رفع الملفات لاستخدام FormData والتحقق من الحجم والنوع
 async function submitUploadFile() {
     const subjSel = document.getElementById('upload-file-subject-select');
     const fileInput = document.getElementById('upload-file-input');
@@ -460,6 +515,18 @@ async function submitUploadFile() {
         showToast('اختر مادة وملف', 'error'); 
         return; 
     }
+
+    // التحقق من الحجم (الحد الأقصى 5 ميجابايت)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('حجم الملف كبير جداً (الحد الأقصى 5MB)', 'error');
+        return;
+    }
+
+    const allowedTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword'];
+    if (!allowedTypes.includes(file.type)) {
+        showToast('نوع الملف غير مدعوم (PDF أو DOCX فقط)', 'error');
+        return;
+    }
     
     const btn = document.querySelector('#upload-file-modal .btn-green');
     const originalText = btn.innerText;
@@ -467,59 +534,38 @@ async function submitUploadFile() {
     btn.innerText = 'جاري الرفع...';
     
     try {
-        const reader = new FileReader();
+        const formData = new FormData();
+        formData.append('file', file);
+        if (customName) formData.append('custom_name', customName);
         
-        reader.onload = async () => {
-            const base64 = reader.result;
-            const fileName = customName || file.name;
-            
-            const res = await secureFetch(`/admin/subjects/${subj}/files-base64`, { 
-                method: 'POST', 
-                body: JSON.stringify({ 
-                    file_name: fileName, 
-                    data: base64, 
-                    mime: file.type 
-                }) 
-            });
-            
-            if (res && res.ok) { 
-                showToast('✅ تم رفع الملف بنجاح'); 
-                closeUploadFileModal(); 
-                loadFilesList(); 
-                fileInput.value = '';
-                nameInput.value = '';
-            } else { 
-                showToast('❌ فشل الرفع، حاول مرة أخرى', 'error'); 
-            }
-            
-            btn.disabled = false;
-            btn.innerText = originalText;
-        };
+        // ملاحظة: لا نضع Content-Type في FormData، المتصفح سيقوم بذلك تلقائياً مع boundary
+        const res = await fetch(`${API_URL}/api/admin/subjects/${subj}/upload-file`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${adminToken}`
+            },
+            body: formData
+        });
         
-        reader.onerror = () => {
-            showToast('❌ خطأ في قراءة الملف', 'error');
-            btn.disabled = false;
-            btn.innerText = originalText;
-        };
-        
-        reader.readAsDataURL(file);
-        
+        if (res.ok) { 
+            showToast('✅ تم رفع الملف بنجاح'); 
+            closeUploadFileModal(); 
+            loadFilesList(); 
+            fileInput.value = '';
+            nameInput.value = '';
+        } else { 
+            const errData = await res.json();
+            showToast(`❌ ${errData.error || 'فشل الرفع، حاول مرة أخرى'}`, 'error'); 
+        }
     } catch(e) {
         console.error('Upload Error:', e);
         showToast('❌ حدث خطأ أثناء الرفع', 'error');
+    } finally {
         btn.disabled = false;
         btn.innerText = originalText;
     }
 }
 
-function openUploadImageModal() {
-    const m = document.getElementById('upload-image-modal');
-    if (m) m.style.display = 'block';
-}
-function closeUploadImageModal() {
-    const m = document.getElementById('upload-image-modal');
-    if (m) m.style.display = 'none';
-}
 async function submitUploadImage() {
     const subjSel = document.getElementById('upload-image-subject-select');
     const fileInput = document.getElementById('upload-image-input');
@@ -533,6 +579,18 @@ async function submitUploadImage() {
         showToast('اختر مادة وصورة', 'error'); 
         return; 
     }
+
+    // التحقق من الحجم (الحد الأقصى 5 ميجابايت)
+    if (file.size > 5 * 1024 * 1024) {
+        showToast('حجم الصورة كبير جداً (الحد الأقصى 5MB)', 'error');
+        return;
+    }
+
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+        showToast('نوع الصورة غير مدعوم', 'error');
+        return;
+    }
     
     const btn = document.querySelector('#upload-image-modal .btn-green');
     const originalText = btn.innerText;
@@ -540,45 +598,32 @@ async function submitUploadImage() {
     btn.innerText = 'جاري الرفع...';
     
     try {
-        const reader = new FileReader();
+        const formData = new FormData();
+        formData.append('file', file);
+        if (caption) formData.append('caption', caption);
         
-        reader.onload = async () => {
-            const base64 = reader.result;
-            
-            const res = await secureFetch(`/admin/subjects/${subj}/images-base64`, { 
-                method: 'POST', 
-                body: JSON.stringify({ 
-                    caption: caption || file.name, 
-                    data: base64, 
-                    mime: file.type 
-                }) 
-            });
-            
-            if (res && res.ok) { 
-                showToast('✅ تم رفع الصورة بنجاح'); 
-                closeUploadImageModal(); 
-                loadImagesList(); 
-                fileInput.value = '';
-                captionInput.value = '';
-            } else { 
-                showToast('❌ فشل الرفع، حاول مرة أخرى', 'error'); 
-            }
-            
-            btn.disabled = false;
-            btn.innerText = originalText;
-        };
+        const res = await fetch(`${API_URL}/api/admin/subjects/${subj}/upload-image`, {
+            method: 'POST',
+            headers: {
+                'Authorization': `Bearer ${adminToken}`
+            },
+            body: formData
+        });
         
-        reader.onerror = () => {
-            showToast('❌ خطأ في قراءة الصورة', 'error');
-            btn.disabled = false;
-            btn.innerText = originalText;
-        };
-        
-        reader.readAsDataURL(file);
-        
+        if (res.ok) { 
+            showToast('✅ تم رفع الصورة بنجاح'); 
+            closeUploadImageModal(); 
+            loadImagesList(); 
+            fileInput.value = '';
+            captionInput.value = '';
+        } else { 
+            const errData = await res.json();
+            showToast(`❌ ${errData.error || 'فشل الرفع، حاول مرة أخرى'}`, 'error'); 
+        }
     } catch(e) {
         console.error('Upload Error:', e);
         showToast('❌ حدث خطأ أثناء الرفع', 'error');
+    } finally {
         btn.disabled = false;
         btn.innerText = originalText;
     }
@@ -664,8 +709,8 @@ async function loadQuestionsList() {
         <div style="border:1px solid #e5e7eb; border-radius:10px; padding:10px; margin-bottom:8px; background:#fff;">
             <div style="display:flex; justify-content:space-between; align-items:center;">
                 <div>
-                    <div style="font-weight:700">${q.question}</div>
-                    <div style="font-size:.85rem; color:#6b7280">المستوى: ${q.level} • النوع: ${q.type} • الموضوع: ${q.topic || '-'}</div>
+                    <div style="font-weight:700">${escapeHtml(q.question)}</div>
+                    <div style="font-size:.85rem; color:#6b7280">المستوى: ${q.level} • النوع: ${q.type} • الموضوع: ${escapeHtml(q.topic || '-')}</div>
                 </div>
                 <div style="display:flex; gap:8px;">
                     <button class="btn" style="background:#f3f4f6; color:#4b5563;" onclick="editQuestion(${q.id})">تعديل</button>
@@ -784,12 +829,12 @@ async function fetchStudents() {
                 <td>
                     <div style="display:flex; align-items:center; gap:10px;">
                         <div style="width:32px; height:32px; background:#e0e7ff; color:#4e54c8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">
-                            ${s.name ? s.name.charAt(0) : '?'}
+                            ${s.name ? escapeHtml(s.name.charAt(0)) : '?'}
                         </div>
-                        <span class="clickable-student" onclick="showStudentDetails(${s.id})">${s.name}</span>
+                        <span class="clickable-student" onclick="showStudentDetails(${s.id})">${escapeHtml(s.name)}</span>
                     </div>
                 </td>
-                <td style="color:#6b7280; font-size:0.9rem;">${s.email}</td>
+                <td style="color:#6b7280; font-size:0.9rem;">${escapeHtml(s.email)}</td>
                 <td style="font-size:0.85rem; color:#9ca3af;">${formatDate(s.createdat)}</td>
                 <td><span class="badge ${isBlocked ? 'bg-red' : 'bg-green'}">${isBlocked ? 'محظور' : 'نشط'}</span></td>
                 <td style="display:flex; gap:8px;">
@@ -871,9 +916,9 @@ async function fetchActivityLogs() {
 
         html += `
             <tr>
-                <td style="font-weight:600;">${student}</td>
-                <td>${displayType}</td>
-                <td>${subject}</td>
+                <td style="font-weight:600;">${escapeHtml(student)}</td>
+                <td>${escapeHtml(displayType)}</td>
+                <td>${escapeHtml(subject)}</td>
                 <td style="color:#9ca3af;">${formatDate(date)}</td>
             </tr>`;
     });
@@ -908,11 +953,11 @@ window.showStudentDetails = async (studentId) => {
         modalName.innerHTML = `
             <div style="display:flex; align-items:center; gap:15px;">
                 <div style="width:50px; height:50px; background:#e0e7ff; color:#4e54c8; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:1.5rem; font-weight:bold;">
-                    ${student.name ? student.name.charAt(0) : '?'}
+                    ${student.name ? escapeHtml(student.name.charAt(0)) : '?'}
                 </div>
                 <div>
-                    <div>${student.name || 'غير معروف'}</div>
-                    <div style="font-size:0.85rem; color:#6b7280;">${student.email || ''}</div>
+                    <div>${escapeHtml(student.name || 'غير معروف')}</div>
+                    <div style="font-size:0.85rem; color:#6b7280;">${escapeHtml(student.email || '')}</div>
                 </div>
             </div>`;
 
@@ -935,7 +980,7 @@ window.showStudentDetails = async (studentId) => {
                 const color = score >= 90 ? '#10b981' : score >= 50 ? '#3b82f6' : '#ef4444';
                 resultsHtml += `
                     <tr>
-                        <td>${SUBJECTS_LIST[sId] || r.quizName || r.quizname || 'اختبار'}</td>
+                        <td>${escapeHtml(SUBJECTS_LIST[sId] || r.quizName || r.quizname || 'اختبار')}</td>
                         <td><span style="background:${color}20; color:${color}; padding:2px 8px; border-radius:4px; font-weight:bold;">${score}%</span></td>
                         <td style="font-size:0.85rem; color:#9ca3af;">${formatDate(r.completedAt || r.completedat)}</td>
                     </tr>`;
@@ -953,7 +998,7 @@ window.showStudentDetails = async (studentId) => {
             activityLogs.forEach(l => {
                 const type = l.activitytype || l.activityType;
                 const subject = l.subjectname || l.subjectName || '-';
-                activityHtml += `<tr><td>${ACTIVITY_MAP[type] || type}</td><td>${subject}</td><td>${formatDate(l.timestamp || l.date)}</td></tr>`;
+                activityHtml += `<tr><td>${escapeHtml(ACTIVITY_MAP[type] || type)}</td><td>${escapeHtml(subject)}</td><td>${formatDate(l.timestamp || l.date)}</td></tr>`;
             });
             activityHtml += '</tbody></table></div>';
         }
@@ -969,10 +1014,10 @@ window.showStudentDetails = async (studentId) => {
             } else {
                 bHtml = `<div style="display:flex;gap:10px;flex-wrap:wrap;">${
                     badges.map(b => `<div style="background:#f9fafb;border:1px solid #e5e7eb;border-radius:10px;padding:10px;display:flex;gap:8px;align-items:center;">
-                        <span style="font-size:1.4rem">${b.icon || '🏅'}</span>
+                        <span style="font-size:1.4rem">${escapeHtml(b.icon || '🏅')}</span>
                         <div>
-                            <div style="font-weight:700">${b.name}</div>
-                            <div style="font-size:.85rem;color:#6b7280">${b.description || ''}</div>
+                            <div style="font-weight:700">${escapeHtml(b.name)}</div>
+                            <div style="font-size:.85rem;color:#6b7280">${escapeHtml(b.description || '')}</div>
                         </div>
                     </div>`).join('')
                 }</div>`;
@@ -1008,7 +1053,7 @@ window.showStudentDetails = async (studentId) => {
             const rows = leaderboard.map((row, i) => {
                 const highlight = row.id === studentId;
                 const color = highlight ? '#f3f4f6' : 'transparent';
-                return `<tr style="background:${color}"><td>${i+1}</td><td>${row.name || 'طالب'}</td><td>${Math.round(row.avgscore || row.avgScore || 0)}%</td><td>${row.totalquizzes || row.totalQuizzes || 0}</td></tr>`;
+                return `<tr style="background:${color}"><td>${i+1}</td><td>${escapeHtml(row.name || 'طالب')}</td><td>${Math.round(row.avgscore || row.avgScore || 0)}%</td><td>${row.totalquizzes || row.totalQuizzes || 0}</td></tr>`;
             }).join('');
             modalLeaderboard.innerHTML = `
                 <div class="admin-table-container">
@@ -1267,3 +1312,31 @@ function setupGlobalSearch() {
         });
     };
 }
+
+// ✅ [Item 11] تفعيل زر القائمة الجانبية للموبايل
+function initSidebar() {
+    const sidebar = document.getElementById('admin-sidebar');
+    const menuBtn = document.getElementById('mobile-menu-btn');
+    const overlay = document.createElement('div');
+    overlay.className = 'sidebar-overlay';
+    document.body.appendChild(overlay);
+
+    if (menuBtn && sidebar) {
+        menuBtn.onclick = () => {
+            sidebar.classList.toggle('open');
+            overlay.classList.toggle('show');
+        };
+
+        overlay.onclick = () => {
+            sidebar.classList.remove('open');
+            overlay.classList.remove('show');
+        };
+    }
+}
+
+// تشغيل الدوال عند التحميل
+document.addEventListener('DOMContentLoaded', () => {
+    initTheme();
+    setupGlobalSearch();
+    initSidebar();
+});

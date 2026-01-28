@@ -50,6 +50,14 @@ const SUBJECTS = {
 // =================================================================
 function $(id) { return document.getElementById(id); }
 
+// ✅ المشكلة 10: حماية XSS - تنظيف البيانات المعروضة
+function escapeHtml(text) {
+    if (typeof text !== 'string') return text;
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function showToast(message, type = 'info') {
     const toast = document.createElement('div');
     toast.className = 'toast';
@@ -166,14 +174,27 @@ function formatDate(dateString) {
     if (!dateString || dateString === 'null' || dateString === 'undefined') return '-';
     try {
         // دعم الـ Timestamps والأرقام
-        const d = new Date(isNaN(dateString) ? dateString : Number(dateString));
-        if (isNaN(d.getTime())) return '-';
-        return new Intl.DateTimeFormat('ar-EG', {
-            timeZone: 'Africa/Cairo',
-            year: 'numeric', month: '2-digit', day: '2-digit',
-            hour: '2-digit', minute: '2-digit', hour12: true
-        }).format(d);
+        const timestamp = isNaN(dateString) ? dateString : Number(dateString);
+        const d = new Date(timestamp);
+        
+        if (isNaN(d.getTime())) {
+            // محاولة معالجة صيغ التواريخ النصية المختلفة
+            let safeDate = String(dateString).replace(' ', 'T');
+            if (!safeDate.includes('Z') && !safeDate.includes('+')) safeDate += 'Z';
+            const d2 = new Date(safeDate);
+            if (isNaN(d2.getTime())) return '-';
+            return formatWithIntl(d2);
+        }
+        return formatWithIntl(d);
     } catch (e) { return '-'; }
+}
+
+function formatWithIntl(date) {
+    return new Intl.DateTimeFormat('ar-EG', { 
+        timeZone: 'Africa/Cairo',
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', hour12: true
+    }).format(date);
 }
 
 // =================================================================
@@ -416,10 +437,25 @@ async function initIndexPage() {
     const g = $('subjects-grid'); 
     if(!g) return; 
     await recordActivity('view_home', 'الصفحة الرئيسية');
-    showLoading(g); 
+    
     const logoEl = document.querySelector('.main-header .logo'); 
     if(logoEl) logoEl.innerHTML = LOGO_SVG + ' Tawal Academy'; 
+
+    // ✅ [Item 7] طبقة Caching لتحسين السرعة (Cache-First then Update)
+    const cachedSubjects = localStorage.getItem('cache_subjects');
+    const cachedStats = localStorage.getItem('cache_stats');
     
+    if (cachedSubjects) {
+        renderSubjects(JSON.parse(cachedSubjects), g);
+        applyTiltEffect(); // تطبيق التأثير على الكروت المخزنة
+    } else {
+        showLoading(g);
+    }
+
+    if (cachedStats) {
+        updateStatsUI(JSON.parse(cachedStats));
+    }
+
     let locks = {};
     try {
         const res = await apiRequest(`/quiz-status`);
@@ -438,32 +474,48 @@ async function initIndexPage() {
                     icon: s.icon_data || SUBJECTS[s.id]?.icon || '📚'
                 };
             });
-            console.log('✅ Loaded subjects from database:', Object.keys(subjectsFromDB).length);
+            localStorage.setItem('cache_subjects', JSON.stringify(subjectsFromDB));
+            renderSubjects(subjectsFromDB, g, locks);
+            applyTiltEffect();
         }
     } catch(e) {
         console.warn('⚠️ Failed to load subjects from database, using static list');
+        if (!cachedSubjects) {
+            renderSubjects(SUBJECTS, g, locks);
+            applyTiltEffect();
+        }
     }
     
-    const finalSubjects = Object.keys(subjectsFromDB).length > 0 ? subjectsFromDB : SUBJECTS;
-
     try {
         const statsRes = await apiRequest(`/public/stats`);
         if (statsRes.ok) {
             const stats = await statsRes.json();
-            const studentsEl = document.getElementById('total-students');
-            const quizzesEl = document.getElementById('total-quizzes');
-            const subjectsEl = document.querySelector('.hero-stats .stat-item:nth-child(3) .stat-number');
-            if (studentsEl) animateCounter(studentsEl, stats.totalStudents || 0);
-            if (quizzesEl) animateCounter(quizzesEl, stats.totalQuizzes || 0);
-            if (subjectsEl) animateCounter(subjectsEl, Object.keys(finalSubjects).length || 0);
+            localStorage.setItem('cache_stats', JSON.stringify(stats));
+            updateStatsUI(stats, Object.keys(subjectsFromDB).length || Object.keys(SUBJECTS).length);
         }
     } catch (e) {
         console.error('فشل تحميل الإحصائيات:', e);
     }
 
-    g.innerHTML=''; 
-    for(const k in finalSubjects){ 
-        const s = finalSubjects[k]; 
+    const searchBar = document.getElementById('search-bar');
+    if (searchBar) {
+        // ✅ المشكلة 3: منع تكرار الـ Listeners عند تحديث الصفحة (UI Stability)
+        const newSearchBar = searchBar.cloneNode(true);
+        searchBar.parentNode.replaceChild(newSearchBar, searchBar);
+        
+        newSearchBar.oninput = (e) => {
+            const q = e.target.value.toLowerCase();
+            document.querySelectorAll('.subject-card').forEach(c => {
+                c.style.display = c.querySelector('.card-title').textContent.toLowerCase().includes(q) ? 'flex' : 'none';
+            });
+        };
+    }
+}
+
+function renderSubjects(subjects, container, locks = {}) {
+    container.innerHTML = '';
+    for (const k in subjects) {
+        const s = subjects[k];
         const lockData = locks[k] || { locked: false, message: '' };
         const isLocked = lockData.locked === true;
         let completionRate = (USER_DATA && USER_DATA.progress) ? (USER_DATA.progress[k] || 0) : 0;
@@ -476,7 +528,7 @@ async function initIndexPage() {
             ? s.icon 
             : `<div style="font-size:2.5rem">${s.icon}</div>`;
 
-        g.innerHTML += `
+        container.innerHTML += `
             <div class="subject-card modern-card" data-tilt>
                 ${lockBadge}
                 <div class="card-icon-wrapper">
@@ -484,15 +536,27 @@ async function initIndexPage() {
                         <div class="card-icon">${iconHTML}</div>
                     </div>
                 </div>
-                <h3 class="card-title">${s.title}</h3>
+                <h3 class="card-title">${escapeHtml(s.title)}</h3>
                 <div class="card-meta"><span class="meta-item">📊 ${completionRate}% مكتمل</span></div>
                 <div class="card-actions">
                     ${quizAction}
                     <a href="summary.html?subject=${k}" class="card-btn btn-summary">📖 الملخصات</a>
                 </div>
-            </div>`; 
+            </div>`;
     }
+}
 
+function updateStatsUI(stats, subjectsCount = 0) {
+    const studentsEl = document.getElementById('total-students');
+    const quizzesEl = document.getElementById('total-quizzes');
+    const subjectsEl = document.querySelector('.hero-stats .stat-item:nth-child(3) .stat-number');
+    
+    if (studentsEl) animateCounter(studentsEl, stats.totalStudents || 0);
+    if (quizzesEl) animateCounter(quizzesEl, stats.totalQuizzes || 0);
+    if (subjectsEl && subjectsCount > 0) animateCounter(subjectsEl, subjectsCount);
+}
+
+function applyTiltEffect() {
     document.querySelectorAll('[data-tilt]').forEach(card => {
         card.onmousemove = (e) => {
             const r = card.getBoundingClientRect();
@@ -502,16 +566,6 @@ async function initIndexPage() {
         };
         card.onmouseleave = () => card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale(1)';
     });
-
-    const searchBar = document.getElementById('search-bar');
-    if (searchBar) {
-        searchBar.oninput = (e) => {
-            const q = e.target.value.toLowerCase();
-            document.querySelectorAll('.subject-card').forEach(c => {
-                c.style.display = c.querySelector('.card-title').textContent.toLowerCase().includes(q) ? 'flex' : 'none';
-            });
-        };
-    }
 }
 
 // =================================================================
@@ -531,7 +585,7 @@ async function initDashboardPage() {
         const stats = statsRes ? await statsRes.json() : {};
         const groups = groupsRes ? await groupsRes.json() : [];
         const myGroups = myGroupsRes ? await myGroupsRes.json() : [];
-        let html = `<div class="dashboard-header" style="margin-bottom:2rem"><h2>أهلاً ${USER_DATA ? USER_DATA.name : 'يا بطل'} 👋</h2></div>`;
+        let html = `<div class="dashboard-header" style="margin-bottom:2rem"><h2>أهلاً ${USER_DATA ? escapeHtml(USER_DATA.name) : 'يا بطل'} 👋</h2></div>`;
         html += `<div class="dashboard-summary-grid">
             <div class="summary-box"><p class="summary-box-label">الاختبارات</p><p class="summary-box-value">${stats.totalQuizzes||0}</p></div>
             <div class="summary-box"><p class="summary-box-label">المتوسط</p><p class="summary-box-value">${stats.averageScore||0}%</p></div>
@@ -549,8 +603,8 @@ async function initDashboardPage() {
         const myGroupsHtml = (myGroups && myGroups.length) ? myGroups.map(g => `
             <div style="padding:10px;border:1px solid var(--border-color);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <div style="font-weight:700">${g.name}</div>
-                    <div style="font-size:.85rem;color:#6b7280">${g.description||''}</div>
+                    <div style="font-weight:700">${escapeHtml(g.name)}</div>
+                    <div style="font-size:.85rem;color:#6b7280">${escapeHtml(g.description||'')}</div>
                     <div style="font-size:.8rem;color:#9ca3af">نقاطك: ${g.points||0} • نقاط المجموعة: ${g.total_points||0}</div>
                 </div>
                 <div style="display:flex;gap:8px;">
@@ -562,8 +616,8 @@ async function initDashboardPage() {
         const allGroupsHtml = (groups && groups.length) ? groups.map(g => `
             <div style="padding:10px;border:1px solid var(--border-color);border-radius:10px;display:flex;justify-content:space-between;align-items:center;">
                 <div>
-                    <div style="font-weight:700">${g.name}</div>
-                    <div style="font-size:.85rem;color:#6b7280">${g.description||''}</div>
+                    <div style="font-weight:700">${escapeHtml(g.name)}</div>
+                    <div style="font-size:.85rem;color:#6b7280">${escapeHtml(g.description||'')}</div>
                     <div style="font-size:.8rem;color:#9ca3af">الأعضاء: ${g.members_count||0} • النقاط: ${g.total_points||0}</div>
                 </div>
                 <div>
@@ -603,8 +657,8 @@ async function setupMessaging() {
             if (data.remaining <= 0) { btn.disabled = true; btn.innerText = '⛔ نفذ الرصيد'; txt.disabled = true; }
             msgList.innerHTML = data.messages.length === 0 ? '<p style="color:#777;text-align:center;">لا توجد رسائل.</p>' : data.messages.map(msg => `
                 <div style="background:var(--bg-color); border:1px solid var(--border-color); border-radius:8px; padding:10px; margin-bottom:10px;">
-                    <p style="font-weight:bold;">أنت:</p><p style="background:var(--bg-secondary-color); padding:8px; border-radius:5px;">${msg.content}</p>
-                    ${msg.adminreply ? `<div style="margin-top:5px; border-top:1px solid #eee; padding-top:5px;"><p style="font-weight:bold; color:var(--color-correct);">الرد:</p><p style="color:var(--color-correct);">${msg.adminreply}</p></div>` : '<small style="color:#999">في الانتظار...</small>'}
+                    <p style="font-weight:bold;">أنت:</p><p style="background:var(--bg-secondary-color); padding:8px; border-radius:5px;">${escapeHtml(msg.content)}</p>
+                    ${msg.adminreply ? `<div style="margin-top:5px; border-top:1px solid #eee; padding-top:5px;"><p style="font-weight:bold; color:var(--color-correct);">الرد:</p><p style="color:var(--color-correct);">${escapeHtml(msg.adminreply)}</p></div>` : '<small style="color:#999">في الانتظار...</small>'}
                     <small style="display:block; color:#ccc; margin-top:5px; font-size:0.7rem;">${formatDate(msg.createdat)}</small>
                 </div>`).join('');
         } catch(e) {}
@@ -672,13 +726,13 @@ function setupGroups() {
             if (container) {
                 const postsHtml = posts.length ? posts.map(p => `
                     <div style="padding:10px;border:1px solid var(--border-color);border-radius:8px;">
-                        <div style="font-weight:700">${p.author||'طالب'}</div>
-                        <div style="font-size:.95rem;color:#374151">${p.content}</div>
+                        <div style="font-weight:700">${escapeHtml(p.author||'طالب')}</div>
+                        <div style="font-size:.95rem;color:#374151">${escapeHtml(p.content)}</div>
                         <div style="font-size:.8rem;color:#9ca3af">${formatDate(p.created_at)}</div>
                     </div>
                 `).join('') : '<p class="placeholder">لا توجد منشورات.</p>';
                 const lbHtml = lb.length ? `<table class="admin-table" style="width:100%;"><thead><tr><th>الطالب</th><th>النقاط</th></tr></thead><tbody>${
-                    lb.map(r => `<tr><td>${r.name||'طالب'}</td><td>${r.points||0}</td></tr>`).join('')
+                    lb.map(r => `<tr><td>${escapeHtml(r.name||'طالب')}</td><td>${r.points||0}</td></tr>`).join('')
                 }</tbody></table>` : '<p class="placeholder">لا توجد نتائج.</p>';
                 const postComposer = `
                     <div style="display:flex;gap:8px;margin-top:8px;">
@@ -749,7 +803,7 @@ async function initSummaryPage(key) {
                 <a href="${API_URL}${encodePath(f.file_path)}" target="_blank" onclick="recordActivity('download_file', '${f.file_name}')" 
                    class="summary-card active" style="display:flex; align-items:center; gap:10px; padding:15px; background:var(--bg-secondary-color); border:2px solid var(--color-correct); border-radius:10px; text-decoration:none; color:var(--text-color);">
                     <div style="background:var(--color-correct); color:#fff; width:40px; height:40px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-weight:bold;">${i+1}</div>
-                    <div><div style="font-weight:bold;">${f.file_name}</div><div style="font-size:0.8rem; color:var(--color-correct);">📥 اضغط للتحميل</div></div>
+                    <div><div style="font-weight:bold;">${escapeHtml(f.file_name)}</div><div style="font-size:0.8rem; color:var(--color-correct);">📥 اضغط للتحميل</div></div>
                 </a>
             `).join('') + `</div>` 
             : '<p class="placeholder">لا توجد ملفات.</p>';
@@ -932,9 +986,9 @@ function runQuizEngine(questions, title, subjectId) {
             let ansTxt = '';
             ansTxt = q.correct || '';
             return `<div style="background:#fff;border:1px solid #e5e7eb;border-radius:10px;padding:12px;margin-bottom:8px;">
-                <div style="font-weight:700;color:#1f2937">${q.question}</div>
-                <div style="font-size:.9rem;color:#6b7280">الإجابة الصحيحة: <span style="font-weight:600;color:#10b981">${ansTxt}</span></div>
-                ${q.chosen?`<div style="font-size:.9rem;color:#9ca3af">إجابتك: ${q.chosen}</div>`:''}
+                <div style="font-weight:700;color:#1f2937">${escapeHtml(q.question)}</div>
+                <div style="font-size:.9rem;color:#6b7280">الإجابة الصحيحة: <span style="font-weight:600;color:#10b981">${escapeHtml(ansTxt)}</span></div>
+                ${q.chosen?`<div style="font-size:.9rem;color:#9ca3af">إجابتك: ${escapeHtml(q.chosen)}</div>`:''}
             </div>`;
         }).join('');
         const badgesHtml = badges.length ? `
@@ -942,8 +996,8 @@ function runQuizEngine(questions, title, subjectId) {
                 <h4 style="margin:0 0 8px 0;color:#92400e">إنجازات جديدة</h4>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
                     ${badges.map(b=>`<div style="background:#fff;padding:10px;border-radius:10px;box-shadow:0 4px 12px rgba(0,0,0,.08);display:flex;gap:8px;align-items:center;">
-                        <span style="font-size:1.4rem">${b.icon}</span>
-                        <div><div style="font-weight:700;color:#92400e">${b.name}</div><div style="font-size:.85rem;color:#78350f">${b.desc}</div></div>
+                        <span style="font-size:1.4rem">${escapeHtml(b.icon)}</span>
+                        <div><div style="font-weight:700;color:#92400e">${escapeHtml(b.name)}</div><div style="font-size:.85rem;color:#78350f">${escapeHtml(b.desc)}</div></div>
                     </div>`).join('')}
                 </div>
             </div>` : '';
@@ -1051,7 +1105,7 @@ function runQuizEngine(questions, title, subjectId) {
                         <div>
                             <h4 style="margin:0 0 8px 0;color:#1f2937">توصيات ذكية</h4>
                             <div style="display:flex;flex-direction:column;gap:8px;">
-                                ${recs.map(r=>`<div style="background:#f3f4f6;padding:12px;border-radius:10px;border-left:4px solid #667eea;color:#4b5563">${r.text}</div>`).join('')}
+                                ${recs.map(r=>`<div style="background:#f3f4f6;padding:12px;border-radius:10px;border-left:4px solid #667eea;color:#4b5563">${escapeHtml(r.text)}</div>`).join('')}
                             </div>
                         </div>` : '<p>لا توجد توصيات حالياً.</p>';
                 } catch(e) { content.innerHTML = '<p>تعذر الحصول على توصيات.</p>'; }

@@ -79,7 +79,19 @@ self.addEventListener('fetch', (event) => {
 
     // ✅ استثناء طلبات API من الكاش نهائياً (Network Only) مع استجابة واضحة
     if (requestUrl.pathname.includes('/api/')) {
-        event.respondWith(fetch(event.request));
+        event.respondWith(
+            fetch(event.request)
+                .catch(err => {
+                    console.error('SW: API Fetch Failed:', err);
+                    return new Response(JSON.stringify({ 
+                        error: true, 
+                        message: 'فشل الاتصال بالسيرفر. تأكد من اتصالك بالإنترنت.',
+                        offline: true 
+                    }), {
+                        headers: { 'Content-Type': 'application/json' }
+                    });
+                })
+        );
         return; 
     }
 
